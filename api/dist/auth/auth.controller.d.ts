@@ -4,11 +4,6 @@ export declare class AuthController {
     constructor(authService: AuthService);
     login(req: any): Promise<{
         access_token: string;
-        user: {
-            email: any;
-            firstName: any;
-            lastName: any;
-            role: any;
-        };
+        user: import("../users/schemas/user.schema").UserDocument | undefined;
     }>;
 }

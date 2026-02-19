@@ -22,17 +22,45 @@ let ClientsService = class ClientsService {
     constructor(clientModel) {
         this.clientModel = clientModel;
     }
+    _cleanData(data) {
+        if (data.organization === "" || data.organization === null || data.organization === undefined) {
+            delete data.organization;
+        }
+        return data;
+    }
     async create(data) {
-        return new this.clientModel(data).save();
+        return new this.clientModel(this._cleanData(data)).save();
     }
     async findAll(query = {}) {
-        return this.clientModel.find(query).populate('organization').exec();
+        const { page = 1, limit = 25, search = '' } = query;
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const filter = {};
+        if (search) {
+            filter.$or = [
+                { name: new RegExp(search, 'i') },
+                { email: new RegExp(search, 'i') }
+            ];
+        }
+        const [data, total] = await Promise.all([
+            this.clientModel.find(filter)
+                .populate('organization')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(parseInt(limit))
+                .exec(),
+            this.clientModel.countDocuments(filter)
+        ]);
+        return { data, total };
     }
     async findOne(id) {
+        if (!id || !id.match(/^[0-9a-fA-F]{24}$/))
+            return null;
         return this.clientModel.findById(id).populate('organization').exec();
     }
     async update(id, data) {
-        return this.clientModel.findByIdAndUpdate(id, data, { new: true }).exec();
+        if (!id || !id.match(/^[0-9a-fA-F]{24}$/))
+            return null;
+        return this.clientModel.findByIdAndUpdate(id, this._cleanData(data), { new: true }).exec();
     }
     async delete(id) {
         return this.clientModel.findByIdAndDelete(id).exec();

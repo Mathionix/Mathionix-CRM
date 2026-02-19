@@ -26,8 +26,11 @@ export default function WhatsAppIntegrationPage() {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
-                const data = await res.json();
-                if (data) setConfig(data);
+                const text = await res.text();
+                if (text) {
+                    const data = JSON.parse(text);
+                    setConfig(data);
+                }
             }
         } catch (err) {
             console.error('Failed to fetch WhatsApp config:', err);

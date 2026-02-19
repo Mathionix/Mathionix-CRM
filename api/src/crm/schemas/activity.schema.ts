@@ -5,7 +5,7 @@ export type ActivityDocument = Activity & Document;
 
 @Schema({ timestamps: true })
 export class Activity {
-    @Prop({ required: true, enum: ['Comment', 'Note', 'Call', 'Task', 'Event'] })
+    @Prop({ required: true, enum: ['Comment', 'Note', 'Call', 'Task', 'Event', 'Meeting'] })
     type: string;
 
     @Prop()

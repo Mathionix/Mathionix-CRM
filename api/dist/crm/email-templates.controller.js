@@ -30,9 +30,13 @@ let EmailTemplatesController = class EmailTemplatesController {
         return this.emailTemplatesService.findOne(id);
     }
     create(req, data) {
+        if (data.type)
+            data.type = data.type.toLowerCase();
         return this.emailTemplatesService.create({ ...data, createdBy: req.user.userId });
     }
     update(id, data) {
+        if (data.type)
+            data.type = data.type.toLowerCase();
         return this.emailTemplatesService.update(id, data);
     }
     delete(id) {
@@ -42,7 +46,7 @@ let EmailTemplatesController = class EmailTemplatesController {
 exports.EmailTemplatesController = EmailTemplatesController;
 __decorate([
     (0, common_1.Get)(),
-    (0, permissions_decorator_1.Permissions)('settings:write'),
+    (0, permissions_decorator_1.Permissions)('settings:write', 'leads:read', 'deals:read', 'contacts:read'),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),

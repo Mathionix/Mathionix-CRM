@@ -46,27 +46,27 @@ export class CRMController {
 
     // Organizations
     @Get('organizations')
-    @Permissions('orgs:read')
+    @Permissions('organizations:read')
     findAllOrganizations() {
         return this.crmService.findAllOrganizations();
     }
 
     @Get('organizations/list')
-    @Permissions('orgs:read')
+    @Permissions('organizations:read')
     findAllOrganizationsList() {
         return this.crmService.findAllOrganizationsList();
     }
 
     @Get('organizations/:id')
-    @Permissions('orgs:read')
+    @Permissions('organizations:read')
     findOneOrganization(@Param('id') id: string) { return this.crmService.findOneOrganization(id); }
 
     @Post('organizations')
-    @Permissions('orgs:write')
+    @Permissions('organizations:write')
     createOrganization(@Body() dto: any) { return this.crmService.createOrganization(dto); }
 
     @Put('organizations/:id')
-    @Permissions('orgs:write')
+    @Permissions('organizations:write')
     updateOrganization(@Param('id') id: string, @Body() dto: any) { return this.crmService.updateOrganization(id, dto); }
 
     // Contacts
@@ -119,7 +119,7 @@ export class CRMController {
     patchContact(@Param('id') id: string, @Body() dto: any) { return this.crmService.updateContact(id, dto); }
 
     @Patch('organizations/:id')
-    @Permissions('orgs:write')
+    @Permissions('organizations:write')
     patchOrganization(@Param('id') id: string, @Body() dto: any) { return this.crmService.updateOrganization(id, dto); }
 
     // Export Endpoints
@@ -161,7 +161,7 @@ export class CRMController {
     removeDeal(@Param('id') id: string) { return this.crmService.removeDeal(id); }
 
     @Delete('organizations/:id')
-    @Permissions('orgs:write')
+    @Permissions('organizations:write')
     removeOrganization(@Param('id') id: string) { return this.crmService.removeOrganization(id); }
 
     @Delete('contacts/:id')

@@ -22,7 +22,7 @@ let Activity = class Activity {
 };
 exports.Activity = Activity;
 __decorate([
-    (0, mongoose_1.Prop)({ required: true, enum: ['Comment', 'Note', 'Call', 'Task', 'Event'] }),
+    (0, mongoose_1.Prop)({ required: true, enum: ['Comment', 'Note', 'Call', 'Task', 'Event', 'Meeting'] }),
     __metadata("design:type", String)
 ], Activity.prototype, "type", void 0);
 __decorate([

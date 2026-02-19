@@ -35,9 +35,11 @@ export class RbacGuard implements CanActivate {
         // Admin override - if role name is 'Admin', allow everything
         // Note: In a production system, you might want to be more granular even with admins
         const userRole = dbUser.roleId as any;
-        console.log(`RbacGuard: Checking access for ${user.email}. Role: ${userRole?.name}`);
+        const legacyRole = (dbUser as any).role?.toLowerCase();
+        console.log(`RbacGuard: Checking access for ${user.email}. Role: ${userRole?.name}, Legacy Role: ${legacyRole}`);
 
-        if (userRole && (userRole.name === 'Admin' || userRole.name === 'administrator')) {
+        if ((userRole && (userRole.name === 'Admin' || userRole.name === 'administrator')) ||
+            legacyRole === 'admin' || legacyRole === 'administrator') {
             console.log('RbacGuard: Super Admin access granted');
             return true;
         }
@@ -45,7 +47,7 @@ export class RbacGuard implements CanActivate {
         const userPermissions = userRole?.permissions?.map((p: any) => p.name) || [];
         console.log(`RbacGuard: Required: ${requiredPermissions}, Has: ${userPermissions}`);
 
-        const hasPermission = requiredPermissions.every((permission) =>
+        const hasPermission = requiredPermissions.some((permission) =>
             userPermissions.includes(permission),
         );
 

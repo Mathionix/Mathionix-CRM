@@ -140,21 +140,21 @@ __decorate([
 ], CRMController.prototype, "updateDeal", null);
 __decorate([
     (0, common_1.Get)('organizations'),
-    (0, permissions_decorator_1.Permissions)('orgs:read'),
+    (0, permissions_decorator_1.Permissions)('organizations:read'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], CRMController.prototype, "findAllOrganizations", null);
 __decorate([
     (0, common_1.Get)('organizations/list'),
-    (0, permissions_decorator_1.Permissions)('orgs:read'),
+    (0, permissions_decorator_1.Permissions)('organizations:read'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], CRMController.prototype, "findAllOrganizationsList", null);
 __decorate([
     (0, common_1.Get)('organizations/:id'),
-    (0, permissions_decorator_1.Permissions)('orgs:read'),
+    (0, permissions_decorator_1.Permissions)('organizations:read'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -162,7 +162,7 @@ __decorate([
 ], CRMController.prototype, "findOneOrganization", null);
 __decorate([
     (0, common_1.Post)('organizations'),
-    (0, permissions_decorator_1.Permissions)('orgs:write'),
+    (0, permissions_decorator_1.Permissions)('organizations:write'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -170,7 +170,7 @@ __decorate([
 ], CRMController.prototype, "createOrganization", null);
 __decorate([
     (0, common_1.Put)('organizations/:id'),
-    (0, permissions_decorator_1.Permissions)('orgs:write'),
+    (0, permissions_decorator_1.Permissions)('organizations:write'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -271,7 +271,7 @@ __decorate([
 ], CRMController.prototype, "patchContact", null);
 __decorate([
     (0, common_1.Patch)('organizations/:id'),
-    (0, permissions_decorator_1.Permissions)('orgs:write'),
+    (0, permissions_decorator_1.Permissions)('organizations:write'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -340,7 +340,7 @@ __decorate([
 ], CRMController.prototype, "removeDeal", null);
 __decorate([
     (0, common_1.Delete)('organizations/:id'),
-    (0, permissions_decorator_1.Permissions)('orgs:write'),
+    (0, permissions_decorator_1.Permissions)('organizations:write'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

@@ -14,6 +14,8 @@ const users_controller_1 = require("./users.controller");
 const user_schema_1 = require("./schemas/user.schema");
 const role_schema_1 = require("./schemas/role.schema");
 const permission_schema_1 = require("./schemas/permission.schema");
+const user_config_schema_1 = require("./schemas/user-config.schema");
+const user_config_controller_1 = require("./user-config.controller");
 let UsersModule = class UsersModule {
 };
 exports.UsersModule = UsersModule;
@@ -24,9 +26,10 @@ exports.UsersModule = UsersModule = __decorate([
                 { name: user_schema_1.User.name, schema: user_schema_1.UserSchema },
                 { name: role_schema_1.Role.name, schema: role_schema_1.RoleSchema },
                 { name: permission_schema_1.Permission.name, schema: permission_schema_1.PermissionSchema },
+                { name: user_config_schema_1.UserConfig.name, schema: user_config_schema_1.UserConfigSchema },
             ])
         ],
-        controllers: [users_controller_1.UsersController],
+        controllers: [users_controller_1.UsersController, user_config_controller_1.UserConfigController],
         providers: [users_service_1.UsersService],
         exports: [users_service_1.UsersService],
     })

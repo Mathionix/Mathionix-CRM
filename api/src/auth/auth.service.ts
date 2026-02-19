@@ -20,15 +20,12 @@ export class AuthService {
     }
 
     async login(user: any) {
+        // Fetch full user with permissions if not already populated
+        const fullUser = await this.usersService.findOne(user.email);
         const payload = { email: user.email, sub: user._id, role: user.role };
         return {
             access_token: this.jwtService.sign(payload),
-            user: {
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                role: user.role
-            }
+            user: fullUser
         };
     }
 

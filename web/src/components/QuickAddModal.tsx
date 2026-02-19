@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { X, User, Building2, Handshake, Users, FileText, CheckCircle, PhoneCall } from 'lucide-react';
+import { X, User, Building2, Handshake, Users, FileText, CheckCircle, PhoneCall, UserCheck } from 'lucide-react';
 
 interface QuickAddModalProps {
     isOpen: boolean;
     onClose: () => void;
-    initialTab?: 'Lead' | 'Deal' | 'Org' | 'Contact' | 'Note' | 'Task' | 'Call';
+    initialTab?: 'Lead' | 'Deal' | 'Org' | 'Contact' | 'Note' | 'Task' | 'Call' | 'Client';
 }
 
 export default function QuickAddModal({ isOpen, onClose, initialTab = 'Lead' }: QuickAddModalProps) {
@@ -120,7 +120,8 @@ export default function QuickAddModal({ isOpen, onClose, initialTab = 'Lead' }: 
         const endpoint = activeTab === 'Lead' ? 'leads' :
             activeTab === 'Deal' ? 'deals' :
                 activeTab === 'Org' ? 'organizations' :
-                    activeTab === 'Contact' ? 'contacts' : 'activities';
+                    activeTab === 'Client' ? 'clients' :
+                        activeTab === 'Contact' ? 'contacts' : 'activities';
 
         // Extract custom fields
         const customFieldsData: any = {};
@@ -133,6 +134,9 @@ export default function QuickAddModal({ isOpen, onClose, initialTab = 'Lead' }: 
         });
 
         let payload: any = { ...data };
+        if (payload.organization === '' || payload.organization === 'Select Organization...') {
+            payload.organization = null;
+        }
         if (Object.keys(customFieldsData).length > 0) {
             payload.customFields = customFieldsData;
         }
@@ -181,6 +185,7 @@ export default function QuickAddModal({ isOpen, onClose, initialTab = 'Lead' }: 
         { name: 'Deal', icon: Handshake, color: 'text-amber-600' },
         { name: 'Org', icon: Building2, color: 'text-purple-600' },
         { name: 'Contact', icon: User, color: 'text-emerald-600' },
+        { name: 'Client', icon: UserCheck, color: 'text-slate-900' },
         { name: 'Note', icon: FileText, color: 'text-slate-600' },
         { name: 'Task', icon: CheckCircle, color: 'text-indigo-600' },
         { name: 'Call', icon: PhoneCall, color: 'text-rose-600' },
@@ -341,6 +346,19 @@ export default function QuickAddModal({ isOpen, onClose, initialTab = 'Lead' }: 
                             </div>
                         )}
 
+                        {activeTab === 'Client' && (
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                                <FormItem label="Full Name" name="name" required placeholder="John Smith" />
+                                <FormItem label="Email Address" name="email" type="email" required />
+                                <FormItem label="Phone Number" name="phone" />
+                                <FormItem label="Status" name="status" type="select" options={['active', 'prospective', 'inactive']} defaultValue="active" />
+                                <FormItem label="Organization" name="organization" type="select" options={[
+                                    { label: 'Select Organization...', value: '' },
+                                    ...organizations.map(o => ({ label: o.name, value: o._id }))
+                                ]} className="col-span-2" />
+                            </div>
+                        )}
+
                         {activeTab === 'Note' && (
                             <div className="space-y-4">
                                 <FormItem label="Title (required)" name="title" required placeholder="Call with John Doe" />
@@ -377,9 +395,10 @@ export default function QuickAddModal({ isOpen, onClose, initialTab = 'Lead' }: 
                                         activeTab === 'Deal' ? 'bg-amber-600 shadow-amber-500/20 hover:bg-amber-700' :
                                             activeTab === 'Org' ? 'bg-purple-600 shadow-purple-500/20 hover:bg-purple-700' :
                                                 activeTab === 'Contact' ? 'bg-emerald-600 shadow-emerald-500/20 hover:bg-emerald-700' :
-                                                    activeTab === 'Note' ? 'bg-slate-700 shadow-slate-500/20 hover:bg-slate-800' :
-                                                        activeTab === 'Task' ? 'bg-indigo-600 shadow-indigo-500/20 hover:bg-indigo-700' :
-                                                            'bg-rose-600 shadow-rose-500/20 hover:bg-rose-700'
+                                                    activeTab === 'Client' ? 'bg-slate-900 shadow-slate-900/20 hover:bg-black' :
+                                                        activeTab === 'Note' ? 'bg-slate-700 shadow-slate-500/20 hover:bg-slate-800' :
+                                                            activeTab === 'Task' ? 'bg-indigo-600 shadow-indigo-500/20 hover:bg-indigo-700' :
+                                                                'bg-rose-600 shadow-rose-500/20 hover:bg-rose-700'
                                     }`}
                             >
                                 {loading ? 'Processing...' : activeTab === 'Call' ? 'Log Call' : `Create ${activeTab}`}

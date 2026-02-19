@@ -29,11 +29,20 @@ let ClientsController = class ClientsController {
     globalSearch(q) {
         return this.searchService.search(q);
     }
-    findAll() {
-        return this.clientsService.findAll();
+    findAll(query) {
+        return this.clientsService.findAll(query);
     }
-    create(data) {
-        return this.clientsService.create(data);
+    async create(data) {
+        try {
+            return await this.clientsService.create(data);
+        }
+        catch (error) {
+            console.error('Client creation error:', error);
+            if (error.code === 11000) {
+                throw new common_1.ConflictException('A client with this email already exists');
+            }
+            throw error;
+        }
     }
     findOne(id) {
         return this.clientsService.findOne(id);
@@ -55,22 +64,23 @@ __decorate([
 ], ClientsController.prototype, "globalSearch", null);
 __decorate([
     (0, common_1.Get)('clients'),
-    (0, permissions_decorator_1.Permissions)('contacts:read'),
+    (0, permissions_decorator_1.Permissions)('clients:read'),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], ClientsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Post)('clients'),
-    (0, permissions_decorator_1.Permissions)('contacts:write'),
+    (0, permissions_decorator_1.Permissions)('clients:write'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)('clients/:id'),
-    (0, permissions_decorator_1.Permissions)('contacts:read'),
+    (0, permissions_decorator_1.Permissions)('clients:read'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -78,7 +88,7 @@ __decorate([
 ], ClientsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Put)('clients/:id'),
-    (0, permissions_decorator_1.Permissions)('contacts:write'),
+    (0, permissions_decorator_1.Permissions)('clients:write'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -87,7 +97,7 @@ __decorate([
 ], ClientsController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)('clients/:id'),
-    (0, permissions_decorator_1.Permissions)('contacts:write'),
+    (0, permissions_decorator_1.Permissions)('clients:write'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

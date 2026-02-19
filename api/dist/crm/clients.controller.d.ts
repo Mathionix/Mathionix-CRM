@@ -5,7 +5,7 @@ export declare class ClientsController {
     private readonly searchService;
     constructor(clientsService: ClientsService, searchService: GlobalSearchService);
     globalSearch(q: string): Promise<any>;
-    findAll(): Promise<import("./schemas/client.schema").Client[]>;
+    findAll(query: any): Promise<any>;
     create(data: any): Promise<import("./schemas/client.schema").Client>;
     findOne(id: string): Promise<import("./schemas/client.schema").Client | null>;
     update(id: string, data: any): Promise<import("./schemas/client.schema").Client | null>;

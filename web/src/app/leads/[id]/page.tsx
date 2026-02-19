@@ -146,7 +146,12 @@ export default function LeadDetailPage() {
                         type="Lead"
                         initialData={lead}
                         onSuccess={() => {
-                            fetch(`http://localhost:3001/crm/leads/${id}`).then(res => res.json()).then(data => setLead(data));
+                            const token = localStorage.getItem('token');
+                            fetch(`http://localhost:3001/crm/leads/${id}`, {
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            }).then(res => res.json()).then(data => {
+                                if (data && data._id) setLead(data);
+                            });
                         }}
                     />
                 </div>
@@ -155,9 +160,18 @@ export default function LeadDetailPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white border rounded-lg p-6 shadow-sm">
-                        <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2 uppercase text-xs tracking-widest text-gray-400">
-                            Basic Information
-                        </h3>
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-bold text-gray-900 flex items-center gap-2 uppercase text-xs tracking-widest text-gray-400">
+                                Basic Information
+                            </h3>
+                            <button
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="p-2 hover:bg-slate-50 rounded-lg text-blue-600 hover:text-blue-700 transition-colors"
+                                title="Edit Basic Info"
+                            >
+                                <Edit2 size={14} />
+                            </button>
+                        </div>
                         <div className="grid grid-cols-2 gap-y-6 gap-x-12">
                             <div className="space-y-1">
                                 <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Email Address</p>
@@ -251,6 +265,26 @@ export default function LeadDetailPage() {
                                 <p className="text-sm font-bold text-gray-900">Admin User</p>
                                 <p className="text-xs text-gray-500">Owner</p>
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white border rounded-lg p-5 shadow-sm bg-gradient-to-br from-indigo-50 to-white border-indigo-100">
+                        <h3 className="font-bold text-indigo-900 mb-4 text-sm uppercase tracking-wider flex items-center gap-2">
+                            <Calendar size={16} />
+                            Schedule Meeting
+                        </h3>
+                        <div className="space-y-3">
+                            <input
+                                type="datetime-local"
+                                className="w-full bg-white border border-indigo-200 rounded-xl px-4 py-2 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
+                            />
+                            <textarea
+                                placeholder="Meeting agenda..."
+                                className="w-full bg-white border border-indigo-200 rounded-xl px-4 py-2 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all h-20 resize-none"
+                            />
+                            <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20 active:scale-95">
+                                Create Meeting
+                            </button>
                         </div>
                     </div>
 

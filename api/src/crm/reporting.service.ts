@@ -49,6 +49,48 @@ export class ReportingService {
             this.getActivityTrends()
         ]);
 
+        // Calculate sales trend (last 4 weeks)
+        const fourWeeksAgo = new Date();
+        fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+
+        const salesTrendData = await this.dealModel.aggregate([
+            { $match: { createdAt: { $gte: fourWeeksAgo } } },
+            {
+                $group: {
+                    _id: { $week: "$createdAt" },
+                    revenue: { $sum: "$dealValue" },
+                    count: { $sum: 1 },
+                    date: { $min: "$createdAt" }
+                }
+            },
+            { $sort: { "_id": 1 } }
+        ]);
+
+        const salesTrend = salesTrendData.map((d, i) => ({
+            name: `Week ${i + 1}`,
+            revenue: d.revenue,
+            leads: d.count
+        }));
+
+        // Revenue Forecast (next 3 months)
+        const revenueForecastData = await this.dealModel.aggregate([
+            { $match: { status: { $ne: 'Closed Lost' } } },
+            {
+                $group: {
+                    _id: { $month: "$expectedClosureDate" },
+                    value: { $sum: { $multiply: ["$dealValue", { $divide: ["$probability", 100] }] } }
+                }
+            },
+            { $sort: { "_id": 1 } },
+            { $limit: 3 }
+        ]);
+
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const revenueForecast = revenueForecastData.map(d => ({
+            name: months[d._id - 1] || 'Unknown',
+            value: Math.round(d.value)
+        }));
+
         const totalRevenue = dealStats.reduce((sum: number, s: any) => sum + s.totalValue, 0);
         const totalDeals = dealStats.reduce((sum: number, s: any) => sum + s.count, 0);
 
@@ -61,21 +103,17 @@ export class ReportingService {
             ],
             funnel: [
                 { label: 'Leads', val: conversion.total, w: 'full' },
-                { label: 'Proposals', val: Math.round(conversion.total * 0.6), w: 'w-4/5' },
-                { label: 'Negotiations', val: Math.round(conversion.total * 0.3), w: 'w-2/3' },
+                { label: 'Qualified', val: Math.round(conversion.total * 0.7), w: 'w-4/5' },
+                { label: 'Negotiations', val: Math.round(totalDeals * 0.5), w: 'w-2/3' },
                 { label: 'Won', val: conversion.converted, w: 'w-1/2' }
             ],
             charts: {
-                salesTrend: [
-                    { name: 'Week 1', revenue: 4000, leads: 24 },
-                    { name: 'Week 2', revenue: 3000, leads: 18 },
-                    { name: 'Week 3', revenue: 2000, leads: 29 },
-                    { name: 'Week 4', revenue: 2780, leads: 15 }
+                salesTrend: salesTrend.length > 0 ? salesTrend : [
+                    { name: 'Week 1', revenue: 0, leads: 0 },
+                    { name: 'Week 2', revenue: 0, leads: 0 }
                 ],
-                revenueForecast: [
-                    { name: 'Mar', value: 4000 },
-                    { name: 'Apr', value: 3000 },
-                    { name: 'May', value: 2000 }
+                revenueForecast: revenueForecast.length > 0 ? revenueForecast : [
+                    { name: 'Next Month', value: 0 }
                 ],
                 dealsByStage: dealStats.map((s: any) => ({ name: s._id || 'Unknown', value: s.count }))
             }

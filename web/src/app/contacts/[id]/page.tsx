@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { User, Mail, Phone, Building2, ChevronLeft, MapPin, Briefcase, Send, MessageCircle, Edit2, Trash2 } from 'lucide-react';
+import { User, Mail, Phone, Building2, ChevronLeft, MapPin, Briefcase, Send, MessageCircle, Edit2, Trash2, Calendar } from 'lucide-react';
 import Timeline from '@/components/Timeline';
 import EditModal from '@/components/EditModal';
 
@@ -108,9 +108,12 @@ export default function ContactDetailPage() {
                         type="Contact"
                         initialData={contact}
                         onSuccess={() => {
-                            fetch(`http://localhost:3001/crm/contacts/${id}`)
-                                .then(res => res.json())
-                                .then(data => setContact(data));
+                            const token = localStorage.getItem('token');
+                            fetch(`http://localhost:3001/crm/contacts/${id}`, {
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            }).then(res => res.json()).then(data => {
+                                if (data && data._id) setContact(data);
+                            });
                         }}
                     />
                 </div>
@@ -165,8 +168,36 @@ export default function ContactDetailPage() {
                 </div>
 
                 <div className="space-y-6">
+                    <div className="bg-white border rounded-xl p-6 shadow-sm bg-gradient-to-br from-indigo-50 to-white border-indigo-100">
+                        <h3 className="text-xs font-bold text-indigo-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <Calendar size={16} />
+                            Schedule Meeting
+                        </h3>
+                        <div className="space-y-3">
+                            <input
+                                type="datetime-local"
+                                className="w-full bg-white border border-indigo-200 rounded-xl px-4 py-2 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
+                            />
+                            <textarea
+                                placeholder="Meeting agenda..."
+                                className="w-full bg-white border border-indigo-200 rounded-xl px-4 py-2 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all h-20 resize-none"
+                            />
+                            <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20 active:scale-95">
+                                Create Meeting
+                            </button>
+                        </div>
+                    </div>
+
                     <div className="bg-white border rounded-xl p-6 shadow-sm">
-                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6">Contact Details</h3>
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Contact Details</h3>
+                            <button
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="p-1.5 hover:bg-slate-50 rounded-lg text-blue-600 transition-colors"
+                            >
+                                <Edit2 size={14} />
+                            </button>
+                        </div>
                         <div className="space-y-6">
                             <div className="flex items-start gap-3">
                                 <Mail size={18} className="text-gray-300 mt-0.5" />

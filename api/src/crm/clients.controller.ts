@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, ConflictException } from '@nestjs/common';
 import { ClientsService } from './clients.service';
 import { GlobalSearchService } from './global-search.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -19,31 +19,39 @@ export class ClientsController {
     }
 
     @Get('clients')
-    @Permissions('contacts:read')
-    findAll() {
-        return this.clientsService.findAll();
+    @Permissions('clients:read')
+    findAll(@Query() query: any) {
+        return this.clientsService.findAll(query);
     }
 
     @Post('clients')
-    @Permissions('contacts:write')
-    create(@Body() data: any) {
-        return this.clientsService.create(data);
+    @Permissions('clients:write')
+    async create(@Body() data: any) {
+        try {
+            return await this.clientsService.create(data);
+        } catch (error: any) {
+            console.error('Client creation error:', error);
+            if (error.code === 11000) {
+                throw new ConflictException('A client with this email already exists');
+            }
+            throw error;
+        }
     }
 
     @Get('clients/:id')
-    @Permissions('contacts:read')
+    @Permissions('clients:read')
     findOne(@Param('id') id: string) {
         return this.clientsService.findOne(id);
     }
 
     @Put('clients/:id')
-    @Permissions('contacts:write')
+    @Permissions('clients:write')
     update(@Param('id') id: string, @Body() data: any) {
         return this.clientsService.update(id, data);
     }
 
     @Delete('clients/:id')
-    @Permissions('contacts:write')
+    @Permissions('clients:write')
     delete(@Param('id') id: string) {
         return this.clientsService.delete(id);
     }

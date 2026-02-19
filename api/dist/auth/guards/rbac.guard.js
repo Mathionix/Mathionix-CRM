@@ -39,14 +39,16 @@ let RbacGuard = class RbacGuard {
             throw new common_1.ForbiddenException('User is inactive or not found');
         }
         const userRole = dbUser.roleId;
-        console.log(`RbacGuard: Checking access for ${user.email}. Role: ${userRole?.name}`);
-        if (userRole && (userRole.name === 'Admin' || userRole.name === 'administrator')) {
+        const legacyRole = dbUser.role?.toLowerCase();
+        console.log(`RbacGuard: Checking access for ${user.email}. Role: ${userRole?.name}, Legacy Role: ${legacyRole}`);
+        if ((userRole && (userRole.name === 'Admin' || userRole.name === 'administrator')) ||
+            legacyRole === 'admin' || legacyRole === 'administrator') {
             console.log('RbacGuard: Super Admin access granted');
             return true;
         }
         const userPermissions = userRole?.permissions?.map((p) => p.name) || [];
         console.log(`RbacGuard: Required: ${requiredPermissions}, Has: ${userPermissions}`);
-        const hasPermission = requiredPermissions.every((permission) => userPermissions.includes(permission));
+        const hasPermission = requiredPermissions.some((permission) => userPermissions.includes(permission));
         if (!hasPermission) {
             console.log('RbacGuard: Insufficient permissions');
             throw new common_1.ForbiddenException('Insufficient permissions');

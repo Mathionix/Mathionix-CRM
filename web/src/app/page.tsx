@@ -18,6 +18,7 @@ import {
 import SalesTrendChart from '../components/SalesTrendChart';
 import ForecastedRevenueChart from '../components/ForecastedRevenueChart';
 import DealsByStageChart from '../components/DealsByStageChart';
+import WidgetGallery from '../components/WidgetGallery';
 
 interface DashboardStat {
   name: string;
@@ -27,18 +28,29 @@ interface DashboardStat {
   title: string;
 }
 
+interface DashboardData {
+  stats: DashboardStat[];
+  funnel: any[];
+  charts?: any;
+}
+
 export default function Dashboard() {
-  const [data, setData] = useState<{ stats: DashboardStat[], funnel: any[] }>({ stats: [], funnel: [] });
+  const [data, setData] = useState<DashboardData>({ stats: [], funnel: [] });
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30');
   const [userFilter, setUserFilter] = useState('All');
   const [isEditMode, setIsEditMode] = useState(false);
   const [activeCharts, setActiveCharts] = useState<string[]>(['Trend', 'Forecast', 'Stage']);
-  const [isChartMenuOpen, setIsChartMenuOpen] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [config, setConfig] = useState<any>(null);
 
-  const addChart = (type: string) => {
-    setActiveCharts([...activeCharts, type]);
-    setIsChartMenuOpen(false);
+  const addChart = (type: string, component: string, title: string) => {
+    // Component name is used to identify the chart type
+    const chartTag = component.replace('Chart', '');
+    if (!activeCharts.includes(chartTag)) {
+      setActiveCharts([...activeCharts, chartTag]);
+    }
+    setIsGalleryOpen(false);
   };
 
   const removeChart = (type: string) => {
@@ -48,112 +60,115 @@ export default function Dashboard() {
   const fetchDashboard = () => {
     setLoading(true);
     const token = localStorage.getItem('token');
-    fetch(`http://localhost:3001/crm/dashboard?days=${period}&owner=${userFilter}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => {
-        if (res.status === 401) {
-          window.location.href = '/auth/login';
-          return null;
+
+    // Fetch both dashboard data and user config
+    Promise.all([
+      fetch(`http://localhost:3001/crm/dashboard?days=${period}&owner=${userFilter}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(res => res.json()),
+      fetch(`http://localhost:3001/users/config`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(res => res.json())
+    ]).then(([result, configResult]) => {
+      if (result) setData(result);
+      if (configResult && configResult.dashboardLayout) {
+        setConfig(configResult);
+        // Map backend dashboardLayout back to the simplistic activeCharts string array for now
+        // to maintain compatibility with existing render logic
+        if (configResult.dashboardLayout) {
+          setActiveCharts(configResult.dashboardLayout.map((w: any) => w.component?.replace('Chart', '') || w.id));
         }
-        return res.json();
-      })
-      .then(result => {
-        if (result) {
-          setData(result);
-          setLoading(false);
+      }
+      setLoading(false);
+    }).catch(err => {
+      console.error('Fetch dashboard error:', err);
+      // Fallback data...
+      setLoading(false);
+      setData({
+        stats: [
+          { name: 'total_leads', value: 124, delta: 12, deltaSuffix: '%', title: 'Total Leads' },
+          { name: 'total_revenue', value: '$42,500', delta: 8, deltaSuffix: '%', title: 'Forecasted Revenue' },
+          { name: 'conversion_rate', value: 64.2, delta: 5, deltaSuffix: '%', title: 'Lead Conversion' },
+          { name: 'active_deals', value: 38, delta: -2, deltaSuffix: '%', title: 'Active Deals' }
+        ],
+        funnel: [
+          { label: 'Leads', val: 124, w: 'full' },
+          { label: 'Proposals', val: 82, w: 'w-4/5' },
+          { label: 'Negotiations', val: 45, w: 'w-2/3' },
+          { label: 'Won', val: 28, w: 'w-1/2' }
+        ],
+        charts: {
+          salesTrend: [
+            { name: 'Week 1', revenue: 4000, leads: 24 },
+            { name: 'Week 2', revenue: 3000, leads: 18 },
+            { name: 'Week 3', revenue: 2000, leads: 29 },
+            { name: 'Week 4', revenue: 2780, leads: 15 }
+          ],
+          revenueForecast: [
+            { name: 'Mar', value: 4000 },
+            { name: 'Apr', value: 3000 },
+            { name: 'May', value: 2000 }
+          ],
+          dealsByStage: [
+            { name: 'Qualification', value: 400 },
+            { name: 'Proposal', value: 300 },
+            { name: 'Negotiation', value: 200 }
+          ]
         }
-      })
-      .catch(err => {
-        console.error('Fetch dashboard error:', err);
-        setLoading(false);
-        // Restoring rich fallback data to maintain UI quality when backend is unreachable
-        setData({
-          stats: [
-            { name: 'total_leads', value: 124, delta: 12, deltaSuffix: '%', title: 'Total Leads' },
-            { name: 'total_revenue', value: '$42,500', delta: 8, deltaSuffix: '%', title: 'Forecasted Revenue' },
-            { name: 'conversion_rate', value: 64.2, delta: 5, deltaSuffix: '%', title: 'Lead Conversion' },
-            { name: 'active_deals', value: 38, delta: -2, deltaSuffix: '%', title: 'Active Deals' }
-          ],
-          funnel: [
-            { label: 'Leads', val: 124, w: 'full' },
-            { label: 'Proposals', val: 82, w: 'w-4/5' },
-            { label: 'Negotiations', val: 45, w: 'w-2/3' },
-            { label: 'Won', val: 28, w: 'w-1/2' }
-          ],
-          charts: {
-            salesTrend: [
-              { name: 'Week 1', revenue: 4000, leads: 24 },
-              { name: 'Week 2', revenue: 3000, leads: 18 },
-              { name: 'Week 3', revenue: 2000, leads: 29 },
-              { name: 'Week 4', revenue: 2780, leads: 15 }
-            ],
-            revenueForecast: [
-              { name: 'Mar', value: 4000 },
-              { name: 'Apr', value: 3000 },
-              { name: 'May', value: 2000 }
-            ],
-            dealsByStage: [
-              { name: 'Qualification', value: 400 },
-              { name: 'Proposal', value: 300 },
-              { name: 'Negotiation', value: 200 }
-            ]
-          }
-        });
       });
+    });
   };
 
   useEffect(() => {
     fetchDashboard();
   }, [period, userFilter]);
 
-  const handleSaveLayout = () => {
+  const handleSaveLayout = async () => {
     setIsEditMode(false);
+    const token = localStorage.getItem('token');
+    try {
+      await fetch(`http://localhost:3001/users/config`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          dashboardLayout: activeCharts.map(c => ({
+            id: c.split(' ').join('-').toLowerCase(),
+            component: c.includes('Chart') ? c : `${c}Chart`,
+            isVisible: true
+          }))
+        })
+      });
+    } catch (err) {
+      console.error('Save layout error:', err);
+    }
   };
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500 pb-20">
+      <WidgetGallery
+        isOpen={isGalleryOpen}
+        onClose={() => setIsGalleryOpen(false)}
+        onAdd={addChart}
+      />
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Performance Overview</h1>
-          <p className="text-slate-500 text-sm mt-1 font-medium italic">Tracking your sales momentum and conversion funnels</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight italic">Analytics Studio</h1>
+          <p className="text-slate-500 text-sm mt-1 font-medium italic opacity-70 tracking-tight">Tailor your intelligence view with dynamic sales widgets.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           {isEditMode ? (
             <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm animate-in zoom-in-95 duration-200 relative">
-              <button onClick={() => setIsChartMenuOpen(!isChartMenuOpen)} className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                <Plus size={14} /> Chart+
+              <button onClick={() => setIsGalleryOpen(true)} className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors italic">
+                <Plus size={14} /> Add Visual
               </button>
 
-              {isChartMenuOpen && (
-                <div className="absolute top-full left-0 mt-2 w-56 bg-white border border-slate-100 rounded-[20px] shadow-2xl py-3 z-50 animate-in fade-in slide-in-from-top-2 border-slate-200/60 backdrop-blur-xl">
-                  <p className="px-4 py-1 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Standard Visuals</p>
-                  <button onClick={() => addChart('Line')} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-blue-50 transition-colors flex items-center gap-3">
-                    <TrendingUp size={14} className="text-blue-500" /> Line Chart
-                  </button>
-                  <button onClick={() => addChart('Bar')} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-indigo-50 transition-colors flex items-center gap-3">
-                    <LayoutGrid size={14} className="text-indigo-500" /> Bar Chart
-                  </button>
-                  <div className="h-px bg-slate-100 my-2" />
-                  <p className="px-4 py-1 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Advanced Widgets</p>
-                  <button onClick={() => addChart('Donut')} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-rose-50 transition-colors flex items-center gap-3">
-                    <RotateCcw size={14} className="text-rose-500" /> Donut Chart
-                  </button>
-                  <button onClick={() => addChart('Axis')} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-emerald-50 transition-colors flex items-center gap-3">
-                    <Activity size={14} className="text-emerald-500" /> Axis Chart
-                  </button>
-                  <button onClick={() => addChart('Number')} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-amber-50 transition-colors flex items-center gap-3">
-                    <Tally5 size={14} className="text-amber-500" /> Number Widget
-                  </button>
-                  <button onClick={() => addChart('Spacer')} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-400 hover:bg-slate-50 transition-colors flex items-center gap-3 italic">
-                    Separator / Spacer
-                  </button>
-                </div>
-              )}
-
-              <button onClick={() => setActiveCharts(['Trend', 'Forecast', 'Stage'])} className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
-                <RotateCcw size={14} /> Restore
+              <button onClick={() => setActiveCharts(['Trend', 'Forecast', 'Stage'])} className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors italic">
+                <RotateCcw size={14} /> Reset
               </button>
               <div className="w-px h-4 bg-slate-200 mx-1" />
               <button onClick={() => setIsEditMode(false)} className="px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors">

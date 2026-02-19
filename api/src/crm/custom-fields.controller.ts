@@ -16,13 +16,13 @@ export class CustomFieldsController {
     }
 
     @Get()
-    @Permissions('leads:read', 'deals:read', 'contacts:read', 'organizations:read')
+    @Permissions('leads:read', 'deals:read', 'contacts:read', 'organizations:read', 'clients:read')
     findAll(@Query('module') module: string) {
         return this.customFieldsService.findAll(module);
     }
 
     @Get(':id')
-    @Permissions('leads:read', 'deals:read', 'contacts:read', 'organizations:read')
+    @Permissions('leads:read', 'deals:read', 'contacts:read', 'organizations:read', 'clients:read')
     findOne(@Param('id') id: string) {
         return this.customFieldsService.findOne(id);
     }

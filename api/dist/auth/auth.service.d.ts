@@ -7,12 +7,7 @@ export declare class AuthService {
     validateUser(email: string, pass: string): Promise<any>;
     login(user: any): Promise<{
         access_token: string;
-        user: {
-            email: any;
-            firstName: any;
-            lastName: any;
-            role: any;
-        };
+        user: import("../users/schemas/user.schema").UserDocument | undefined;
     }>;
     register(userDto: any): Promise<import("../users/schemas/user.schema").UserDocument>;
 }

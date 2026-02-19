@@ -20,14 +20,19 @@ async function bootstrap() {
         { name: 'contacts:read', description: 'View contacts', module: 'CRM' },
         { name: 'contacts:write', description: 'Create and edit contacts', module: 'CRM' },
         // Organizations
-        { name: 'orgs:read', description: 'View organizations', module: 'CRM' },
-        { name: 'orgs:write', description: 'Create and edit organizations', module: 'CRM' },
+        { name: 'organizations:read', description: 'View organizations', module: 'CRM' },
+        { name: 'organizations:write', description: 'Create and edit organizations', module: 'CRM' },
+        // Clients
+        { name: 'clients:read', description: 'View clients', module: 'CRM' },
+        { name: 'clients:write', description: 'Create and edit clients', module: 'CRM' },
         // Activities
         { name: 'activities:read', description: 'View activity timeline', module: 'CRM' },
         { name: 'activities:write', description: 'Post comments and tasks', module: 'CRM' },
         // Settings
         { name: 'settings:admin', description: 'Manage users, roles and workspace settings', module: 'Settings' },
-        { name: 'dashboard:read', description: 'View dashboard and reports', module: 'CRM' },
+        { name: 'settings:write', description: 'Manage workspace configuration', module: 'Settings' },
+        { name: 'dashboard:read', description: 'View dashboard', module: 'CRM' },
+        { name: 'reports:read', description: 'View reports', module: 'CRM' },
     ];
 
     const createdPermissions: any[] = [];
@@ -60,7 +65,15 @@ async function bootstrap() {
             name: 'Sales Manager',
             description: 'Can manage all CRM data but no settings',
             isSystem: false,
-            permissions: createdPermissions.filter(p => (p as any).module === 'CRM').map(p => (p as any)._id)
+            permissions: createdPermissions.filter(p => [
+                'leads:read', 'leads:write', 'leads:delete',
+                'deals:read', 'deals:write',
+                'organizations:read', 'organizations:write',
+                'contacts:read', 'contacts:write',
+                'clients:read', 'clients:write',
+                'activities:read', 'activities:write',
+                'dashboard:read', 'reports:read'
+            ].includes((p as any).name)).map(p => (p as any)._id)
         },
         {
             name: 'Sales Representative',
@@ -80,8 +93,13 @@ async function bootstrap() {
                 createdRoles.push(cr);
                 console.log(`[Role] Created: ${r.name}`);
             } else {
+                // Update existing role with new permissions
+                await (usersService as any).updateRole((found as any)._id, {
+                    description: r.description,
+                    permissions: r.permissions
+                });
                 createdRoles.push(found);
-                console.log(`[Role] Exists: ${r.name}`);
+                console.log(`[Role] Updated permissions for: ${r.name}`);
             }
         } catch (e: any) {
             console.error(`[Role] Error creating ${r.name}:`, e.message);
@@ -114,6 +132,28 @@ async function bootstrap() {
         }
     } catch (e: any) {
         console.error(`[User] Error seeding admin:`, e.message);
+    }
+
+    console.log('Aggressively cleaning up corrupted data...');
+    try {
+        const mongoose = require('mongoose');
+        const db = mongoose.connection;
+        const collections = ['clients', 'contacts', 'leads', 'deals', 'users'];
+        const fields = ['organization', 'roleId', 'lead', 'client'];
+
+        for (const col of collections) {
+            for (const field of fields) {
+                const res = await db.collection(col).updateMany(
+                    { [field]: "" },
+                    { $unset: { [field]: 1 } }
+                );
+                if (res.modifiedCount > 0) {
+                    console.log(`[Cleanup] Fixed ${res.modifiedCount} documents in "${col}" (field: ${field})`);
+                }
+            }
+        }
+    } catch (e: any) {
+        console.log('[Cleanup] Error during aggressive scrubbing:', e.message);
     }
 
     console.log('Seed completed successfully!');

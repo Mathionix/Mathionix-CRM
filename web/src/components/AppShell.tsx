@@ -21,6 +21,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         return () => window.removeEventListener('trigger-quick-add', handleTrigger);
     }, []);
 
+    const [user, setUser] = useState<any>(null);
+
+    useEffect(() => {
+        const saved = localStorage.getItem('user');
+        if (saved) {
+            try {
+                setUser(JSON.parse(saved));
+            } catch (e) {
+                console.error('Failed to parse user', e);
+            }
+        }
+    }, []);
+
     return (
         <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
             <Sidebar />
@@ -45,11 +58,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         <div className="relative group/profile">
                             <div className="flex items-center gap-3 cursor-pointer hover:bg-slate-100 p-1.5 rounded-xl transition-colors">
                                 <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-[11px] font-bold text-white shadow-lg shadow-blue-500/20">
-                                    AD
+                                    {user?.firstName?.[0]}{user?.lastName?.[0] || 'U'}
                                 </div>
                                 <div className="hidden md:block">
-                                    <p className="text-sm font-semibold text-slate-800 leading-none">Admin User</p>
-                                    <p className="text-[10px] text-slate-500 font-medium mt-1">Super Admin</p>
+                                    <p className="text-sm font-semibold text-slate-800 leading-none">{user?.firstName} {user?.lastName}</p>
+                                    <p className="text-[10px] text-slate-500 font-medium mt-1 uppercase tracking-wider">{user?.role || 'User'}</p>
                                 </div>
                             </div>
 

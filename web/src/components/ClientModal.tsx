@@ -69,8 +69,10 @@ export default function ClientModal({ isOpen, onClose, onSuccess, client }: Clie
             const url = client ? `http://localhost:3001/crm/clients/${client._id}` : `http://localhost:3001/crm/clients`;
 
             const payload: any = { ...formData };
-            // Strip empty organization — Mongoose can't cast "" to ObjectId
-            if (!payload.organization) delete payload.organization;
+            // Ensure organization is null if not selected to prevent CastError
+            if (!payload.organization || payload.organization === '' || payload.organization === 'Select Organization...') {
+                payload.organization = null;
+            }
 
             const res = await fetch(url, {
                 method,
@@ -90,7 +92,7 @@ export default function ClientModal({ isOpen, onClose, onSuccess, client }: Clie
             }
         } catch (error) {
             console.error('Client mutation error:', error);
-            alert('An error occurred');
+            alert('An error occurred. Please check if the email is already in use.');
         } finally {
             setLoading(false);
         }

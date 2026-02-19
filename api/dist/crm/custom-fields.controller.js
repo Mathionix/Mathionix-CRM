@@ -50,7 +50,7 @@ __decorate([
 ], CustomFieldsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, permissions_decorator_1.Permissions)('leads:read', 'deals:read', 'contacts:read', 'organizations:read'),
+    (0, permissions_decorator_1.Permissions)('leads:read', 'deals:read', 'contacts:read', 'organizations:read', 'clients:read'),
     __param(0, (0, common_1.Query)('module')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -58,7 +58,7 @@ __decorate([
 ], CustomFieldsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    (0, permissions_decorator_1.Permissions)('leads:read', 'deals:read', 'contacts:read', 'organizations:read'),
+    (0, permissions_decorator_1.Permissions)('leads:read', 'deals:read', 'contacts:read', 'organizations:read', 'clients:read'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

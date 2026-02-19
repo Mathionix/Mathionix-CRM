@@ -25,8 +25,14 @@ export default function LoginPage() {
             if (res.ok) {
                 localStorage.setItem('token', data.access_token);
                 localStorage.setItem('user', JSON.stringify(data.user));
-                document.cookie = `token=${data.access_token}; path=/`; // For middleware if needed
-                router.push('/');
+                document.cookie = `token=${data.access_token}; path=/`;
+
+                // Redirect based on role
+                if (data.user.role === 'Admin' || data.user.role === 'administrator') {
+                    router.push('/');
+                } else {
+                    router.push('/leads');
+                }
             } else {
                 alert(data.message || 'Login failed');
             }

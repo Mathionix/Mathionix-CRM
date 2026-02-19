@@ -240,6 +240,14 @@ let CRMService = class CRMService {
                         jobTitle: row.JobTitle || row['Job Title'] || 'Contact',
                     });
                 }
+                else if (type === 'meetings') {
+                    await this.activityModel.create({
+                        type: 'Meeting',
+                        content: row.Agenda || row.agenda || 'Imported Meeting',
+                        relatedTo: row.RelatedTo || row.relatedTo,
+                        metadata: { scheduledAt: row.Date || row.date || new Date() }
+                    });
+                }
                 count++;
             }
             catch (err) {
