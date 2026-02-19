@@ -35,10 +35,10 @@ export default function ReportsPage() {
         const token = localStorage.getItem('token');
         try {
             const [dealsRes, leadsRes, activitiesRes, configRes] = await Promise.all([
-                fetch('http://localhost:3001/crm/dashboard?days=30', { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch('http://localhost:3001/crm/leads', { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch('http://localhost:3001/crm/activities?limit=50', { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch('http://localhost:3001/users/config', { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/crm/dashboard?days=30`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/crm/leads`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/crm/activities?limit=50`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/config`, { headers: { 'Authorization': `Bearer ${token}` } })
             ]);
 
             const [deals, leads, activities, config] = await Promise.all([
@@ -73,7 +73,7 @@ export default function ReportsPage() {
     const handleSaveLayout = async () => {
         const token = localStorage.getItem('token');
         try {
-            await fetch(`http://localhost:3001/users/config`, {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/config`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

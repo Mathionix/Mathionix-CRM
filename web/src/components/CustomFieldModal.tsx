@@ -29,7 +29,7 @@ export default function CustomFieldModal({ isOpen, onClose, onSuccess, field }: 
         const token = localStorage.getItem('token');
         const payload = {
             ...formData,
-            options: formData.options.split(',').map(o => o.trim()).filter(Boolean),
+            options: formData.options.split(',').map((o: string) => o.trim()).filter(Boolean),
             key: formData.key || formData.name.toLowerCase().replace(/\s+/g, '_'),
         };
 

@@ -63,10 +63,10 @@ export default function Dashboard() {
 
     // Fetch both dashboard data and user config
     Promise.all([
-      fetch(`http://localhost:3001/crm/dashboard?days=${period}&owner=${userFilter}`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/crm/dashboard?days=${period}&owner=${userFilter}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       }).then(res => res.json()),
-      fetch(`http://localhost:3001/users/config`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/config`, {
         headers: { 'Authorization': `Bearer ${token}` }
       }).then(res => res.json())
     ]).then(([result, configResult]) => {
@@ -127,7 +127,7 @@ export default function Dashboard() {
     setIsEditMode(false);
     const token = localStorage.getItem('token');
     try {
-      await fetch(`http://localhost:3001/users/config`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/config`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
