@@ -12,13 +12,102 @@ interface QuickAddModalProps {
 export default function QuickAddModal({ isOpen, onClose, initialTab = 'Lead' }: QuickAddModalProps) {
     const [activeTab, setActiveTab] = useState(initialTab);
     const [loading, setLoading] = useState(false);
+    const [customFields, setCustomFields] = useState<any[]>([]);
+    const [pipelines, setPipelines] = useState<any[]>([]);
+    const [selectedPipeline, setSelectedPipeline] = useState<string>('');
+    const [organizations, setOrganizations] = useState<any[]>([]);
+    const [contacts, setContacts] = useState<any[]>([]);
 
     // Sync activeTab with initialTab when modal opens or initialTab changes
     useEffect(() => {
         if (isOpen) {
             setActiveTab(initialTab);
+            fetchCustomFields(initialTab);
+            fetchOrganizations();
+            fetchContacts();
         }
     }, [isOpen, initialTab]);
+
+    useEffect(() => {
+        fetchCustomFields(activeTab);
+        if (activeTab === 'Deal') {
+            fetchPipelines();
+            fetchOrganizations();
+            fetchContacts();
+        }
+    }, [activeTab]);
+
+    const fetchOrganizations = async () => {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch('http://localhost:3001/crm/organizations/list', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) setOrganizations(await res.json());
+        } catch (err) {
+            console.error('Failed to fetch organizations:', err);
+        }
+    };
+
+    const fetchContacts = async () => {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch('http://localhost:3001/crm/contacts/list', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) setContacts(await res.json());
+        } catch (err) {
+            console.error('Failed to fetch contacts:', err);
+        }
+    };
+
+    const fetchPipelines = async () => {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch('http://localhost:3001/crm/pipelines', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setPipelines(data);
+                if (data.length > 0) {
+                    const defaultP = data.find((p: any) => p.isDefault) || data[0];
+                    setSelectedPipeline(defaultP._id);
+                }
+            }
+        } catch (err) {
+            console.error('Failed to fetch pipelines:', err);
+        }
+    };
+
+    const fetchCustomFields = async (tab: string) => {
+        const moduleMap: any = { 'Lead': 'leads', 'Deal': 'deals', 'Org': 'organizations', 'Contact': 'contacts' };
+        const moduleName = moduleMap[tab];
+        if (!moduleName) {
+            setCustomFields([]);
+            return;
+        }
+
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`http://localhost:3001/custom-fields?module=${moduleName}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setCustomFields(data);
+            } else {
+                if (res.status === 401) {
+                    window.location.href = '/auth/login';
+                }
+                console.error('Failed to fetch custom fields:', res.status, res.statusText);
+                setCustomFields([]);
+            }
+        } catch (err) {
+            console.error('Failed to fetch custom fields:', err);
+            setCustomFields([]);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -33,8 +122,26 @@ export default function QuickAddModal({ isOpen, onClose, initialTab = 'Lead' }: 
                 activeTab === 'Org' ? 'organizations' :
                     activeTab === 'Contact' ? 'contacts' : 'activities';
 
-        // Adjust data structure for activities
-        let payload: any = data;
+        // Extract custom fields
+        const customFieldsData: any = {};
+        customFields.forEach(field => {
+            const fieldName = `cf_${field.key}`;
+            if (data[fieldName]) {
+                customFieldsData[field.key] = data[fieldName];
+                delete data[fieldName];
+            }
+        });
+
+        let payload: any = { ...data };
+        if (Object.keys(customFieldsData).length > 0) {
+            payload.customFields = customFieldsData;
+        }
+
+        if (activeTab === 'Deal' && payload.status) {
+            payload.stage = payload.status;
+            delete payload.status;
+        }
+
         if (['Note', 'Task', 'Call'].includes(activeTab)) {
             payload = {
                 type: activeTab,
@@ -45,14 +152,22 @@ export default function QuickAddModal({ isOpen, onClose, initialTab = 'Lead' }: 
         }
 
         try {
+            const token = localStorage.getItem('token');
             const res = await fetch(`http://localhost:3001/crm/${endpoint}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
                 onClose();
                 window.location.reload();
+            } else {
+                const errorData = await res.json();
+                console.error('Failed to create record:', res.status, errorData);
+                alert(`Failed to create record: ${errorData.message || res.statusText}`);
             }
         } catch (err) {
             console.error('Failed to create record', err);
@@ -70,6 +185,9 @@ export default function QuickAddModal({ isOpen, onClose, initialTab = 'Lead' }: 
         { name: 'Task', icon: CheckCircle, color: 'text-indigo-600' },
         { name: 'Call', icon: PhoneCall, color: 'text-rose-600' },
     ];
+
+    const currentPipeline = pipelines.find(p => p._id === selectedPipeline);
+    const stageOptions = currentPipeline ? currentPipeline.stages.sort((a: any, b: any) => a.order - b.order).map((s: any) => s.name) : [];
 
     return (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
@@ -123,22 +241,55 @@ export default function QuickAddModal({ isOpen, onClose, initialTab = 'Lead' }: 
                                 <FormItem label="Industry" name="industry" placeholder="e.g. Technology" />
                                 <FormItem label="Status" name="status" type="select" options={['New', 'Qualified', 'Replied', 'Opportunity']} defaultValue="New" />
                                 <FormItem label="Lead Owner" name="leadOwner" defaultValue="Administrator" />
+                                {customFields.map(field => (
+                                    <FormItem
+                                        key={field._id}
+                                        label={field.name}
+                                        name={`cf_${field.key}`}
+                                        type={field.type}
+                                        options={field.options}
+                                        required={field.required}
+                                    />
+                                ))}
                             </div>
                         )}
 
                         {activeTab === 'Deal' && (
                             <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                                <FormItem label="Organization" name="organization" type="select" options={['Existing Org 1', 'Existing Org 2']} />
-                                <FormItem label="Contact" name="contactPerson" type="select" options={['John Doe', 'Jane Smith']} />
+                                <FormItem label="Organization" name="organization" type="select" options={organizations.map(o => ({ label: o.name, value: o._id }))} />
+                                <FormItem label="Contact" name="contactPerson" type="select" options={contacts.map(c => ({ label: `${c.firstName} ${c.lastName}`, value: c._id }))} />
                                 <FormItem label="Deal Title" name="title" required placeholder="Enterprise Deal" />
                                 <FormItem label="Amount" name="dealValue" type="number" required placeholder="₹ 0.00" />
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Pipeline</label>
+                                    <select
+                                        name="pipeline"
+                                        value={selectedPipeline}
+                                        onChange={(e) => setSelectedPipeline(e.target.value)}
+                                        className="w-full bg-slate-50 border-none rounded-xl py-2.5 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
+                                    >
+                                        {pipelines.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
+                                    </select>
+                                </div>
+                                <FormItem label="Stage" name="status" type="select" options={stageOptions} />
+
                                 <FormItem label="Territory" name="territory" placeholder="e.g. India" />
                                 <FormItem label="Website" name="website" placeholder="https://..." />
                                 <FormItem label="Annual Revenue" name="annualRevenue" type="number" placeholder="₹ 0.00" />
                                 <FormItem label="No. of Employees" name="noOfEmployees" type="select" options={['1-10', '11-50', '51-200', '201-500', '500+']} />
                                 <FormItem label="Industry" name="industry" placeholder="e.g. Technology" />
-                                <FormItem label="Status" name="status" type="select" options={['Qualification', 'Discovery', 'Proposal', 'Negotiation', 'Won', 'Lost']} defaultValue="Qualification" />
                                 <FormItem label="Deal Owner" name="dealOwner" defaultValue="Administrator" />
+                                {customFields.map(field => (
+                                    <FormItem
+                                        key={field._id}
+                                        label={field.name}
+                                        name={`cf_${field.key}`}
+                                        type={field.type}
+                                        options={field.options}
+                                        required={field.required}
+                                    />
+                                ))}
                             </div>
                         )}
 
@@ -151,6 +302,17 @@ export default function QuickAddModal({ isOpen, onClose, initialTab = 'Lead' }: 
                                 <FormItem label="No. of employees" name="noOfEmployees" type="select" options={['1-10', '11-50', '51-200', '201-500', '500+']} />
                                 <FormItem label="Industry" name="industry" />
                                 <FormItem label="Address" name="address" className="col-span-2" />
+                                {customFields.map(field => (
+                                    <FormItem
+                                        key={field._id}
+                                        label={field.name}
+                                        name={`cf_${field.key}`}
+                                        type={field.type}
+                                        options={field.options}
+                                        required={field.required}
+                                        className={field.type === 'textarea' ? 'col-span-2' : ''}
+                                    />
+                                ))}
                             </div>
                         )}
 
@@ -165,6 +327,17 @@ export default function QuickAddModal({ isOpen, onClose, initialTab = 'Lead' }: 
                                 <FormItem label="Company Name" name="organization" />
                                 <FormItem label="Designation" name="jobTitle" />
                                 <FormItem label="Address" name="address" className="col-span-2" />
+                                {customFields.map(field => (
+                                    <FormItem
+                                        key={field._id}
+                                        label={field.name}
+                                        name={`cf_${field.key}`}
+                                        type={field.type}
+                                        options={field.options}
+                                        required={field.required}
+                                        className={field.type === 'textarea' ? 'col-span-2' : ''}
+                                    />
+                                ))}
                             </div>
                         )}
 
@@ -222,17 +395,21 @@ export default function QuickAddModal({ isOpen, onClose, initialTab = 'Lead' }: 
 function FormItem({ label, name, type = 'text', options = [], placeholder = '', required = false, className = '', defaultValue = '' }: any) {
     return (
         <div className={`space-y-1 ${className}`}>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
                 {label} {required && <span className="text-rose-500">*</span>}
             </label>
             {type === 'select' ? (
-                <select name={name} required={required} defaultValue={defaultValue} className="w-full bg-slate-50 border-none rounded-xl py-2.5 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer">
-                    {options.map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
+                <select name={name} required={required} defaultValue={defaultValue} className="w-full bg-white border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer">
+                    {options.map((opt: any) => (
+                        <option key={typeof opt === 'string' ? opt : opt.value} value={typeof opt === 'string' ? opt : opt.value}>
+                            {typeof opt === 'string' ? opt : opt.label}
+                        </option>
+                    ))}
                 </select>
             ) : type === 'textarea' ? (
-                <textarea name={name} required={required} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all min-h-[100px]" placeholder={placeholder} />
+                <textarea name={name} required={required} defaultValue={defaultValue} className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all min-h-[100px]" placeholder={placeholder} />
             ) : (
-                <input name={name} type={type} required={required} defaultValue={defaultValue} className="w-full bg-slate-50 border-none rounded-xl py-2.5 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder={placeholder} />
+                <input name={name} type={type} required={required} defaultValue={defaultValue} className="w-full bg-white border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" placeholder={placeholder} />
             )}
         </div>
     );

@@ -34,6 +34,9 @@ export class Contact {
 
     @Prop()
     address: string;
+
+    @Prop({ type: Map, of: String })
+    customFields: Map<string, string>;
 }
 
 export const ContactSchema = SchemaFactory.createForClass(Contact);

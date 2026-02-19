@@ -22,6 +22,7 @@ let Contact = class Contact {
     gender;
     salutation;
     address;
+    customFields;
 };
 exports.Contact = Contact;
 __decorate([
@@ -64,6 +65,10 @@ __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
 ], Contact.prototype, "address", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Map, of: String }),
+    __metadata("design:type", Map)
+], Contact.prototype, "customFields", void 0);
 exports.Contact = Contact = __decorate([
     (0, mongoose_1.Schema)({ timestamps: true })
 ], Contact);

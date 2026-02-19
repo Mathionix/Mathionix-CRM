@@ -10,6 +10,7 @@ export declare class Organization {
     phone: string;
     email: string;
     address: string;
+    customFields: Map<string, string>;
 }
 export declare const OrganizationSchema: import("mongoose").Schema<Organization, import("mongoose").Model<Organization, any, any, any, (Document<unknown, any, Organization, any, import("mongoose").DefaultSchemaOptions> & Organization & {
     _id: import("mongoose").Types.ObjectId;
@@ -103,6 +104,15 @@ export declare const OrganizationSchema: import("mongoose").Schema<Organization,
         id: string;
     }> | undefined;
     address?: import("mongoose").SchemaDefinitionProperty<string, Organization, Document<unknown, {}, Organization, {
+        id: string;
+    }, import("mongoose").DefaultSchemaOptions> & Omit<Organization & {
+        _id: import("mongoose").Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    customFields?: import("mongoose").SchemaDefinitionProperty<Map<string, string>, Organization, Document<unknown, {}, Organization, {
         id: string;
     }, import("mongoose").DefaultSchemaOptions> & Omit<Organization & {
         _id: import("mongoose").Types.ObjectId;

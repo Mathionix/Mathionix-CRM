@@ -25,14 +25,29 @@ export default function CallsPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('http://localhost:3001/crm/activities?type=Call')
-            .then(res => res.json())
+        const token = localStorage.getItem('token');
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/crm/activities?type=Call`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(async res => {
+                if (res.status === 401) {
+                    window.location.href = '/auth/login';
+                    return null;
+                }
+                const text = await res.text();
+                return text ? JSON.parse(text) : [];
+            })
             .then(data => {
-                setCalls(data);
+                if (data) {
+                    // Handle both array and paginated response
+                    const callList = Array.isArray(data) ? data : (data.data || []);
+                    setCalls(callList);
+                }
                 setLoading(false);
             })
             .catch(err => {
                 console.error('Failed to fetch calls', err);
+                setCalls([]); // Fallback to empty array
                 setLoading(false);
             });
     }, []);
@@ -88,7 +103,7 @@ export default function CallsPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {calls.map(call => (
+                            {Array.isArray(calls) && calls.length > 0 && calls.map(call => (
                                 <tr key={call._id} className="hover:bg-slate-50/50 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2 font-medium text-gray-900">
@@ -104,8 +119,8 @@ export default function CallsPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${call.metadata?.status === 'Missed' ? 'bg-rose-100 text-rose-600' :
-                                                call.metadata?.status === 'Busy' ? 'bg-amber-100 text-amber-600' :
-                                                    'bg-emerald-100 text-emerald-600'
+                                            call.metadata?.status === 'Busy' ? 'bg-amber-100 text-amber-600' :
+                                                'bg-emerald-100 text-emerald-600'
                                             }`}>
                                             {call.metadata?.status || 'Completed'}
                                         </span>

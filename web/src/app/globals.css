@@ -2,7 +2,10 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
+  /* Darker Slate-950 for better contrast */
+  --slate-500: #64748b;
+  --slate-600: #475569;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -43,4 +46,17 @@ body {
 
 .transition-hover {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Global Form Visibility Fix */
+input,
+select,
+textarea {
+  color: #0f172a !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  color: #000000 !important;
 }

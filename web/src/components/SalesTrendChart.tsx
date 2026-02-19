@@ -10,17 +10,17 @@ import {
     Tooltip,
 } from 'recharts';
 
-const data = [
-    { name: 'Mon', leads: 42, deals: 24 },
-    { name: 'Tue', leads: 56, deals: 32 },
-    { name: 'Wed', leads: 45, deals: 38 },
-    { name: 'Thu', leads: 82, deals: 42 },
-    { name: 'Fri', leads: 68, deals: 55 },
-    { name: 'Sat', leads: 45, deals: 28 },
-    { name: 'Sun', leads: 38, deals: 18 },
-];
+export default function SalesTrendChart({ data = [] }: { data?: any[] }) {
+    const chartData = data?.length ? data : [
+        { name: 'Mon', leads: 0, deals: 0 },
+        { name: 'Tue', leads: 0, deals: 0 },
+        { name: 'Wed', leads: 0, deals: 0 },
+        { name: 'Thu', leads: 0, deals: 0 },
+        { name: 'Fri', leads: 0, deals: 0 },
+        { name: 'Sat', leads: 0, deals: 0 },
+        { name: 'Sun', leads: 0, deals: 0 },
+    ];
 
-export default function SalesTrendChart() {
     return (
         <div className="h-full w-full">
             <ResponsiveContainer width="100%" height="100%">

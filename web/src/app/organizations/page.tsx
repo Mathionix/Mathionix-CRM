@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Filter, Plus, Building2, MoreHorizontal } from 'lucide-react';
+import QuickAddModal from '@/components/QuickAddModal';
 
 interface Organization {
     _id: string;
@@ -18,26 +19,37 @@ export default function OrganizationsPage() {
     const [orgs, setOrgs] = useState<Organization[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
-        fetch('http://localhost:3001/crm/organizations')
-            .then(res => res.json())
+        const token = localStorage.getItem('token');
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/crm/organizations`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(async res => {
+                if (res.status === 401) {
+                    window.location.href = '/auth/login';
+                    return null;
+                }
+                const text = await res.text();
+                return text ? JSON.parse(text) : [];
+            })
             .then(data => {
-                setOrgs(data);
+                if (data) {
+                    // Handle both array and paginated response
+                    const orgList = Array.isArray(data) ? data : (data.data || []);
+                    setOrgs(orgList);
+                }
                 setLoading(false);
             })
             .catch(err => {
                 console.error('Failed to fetch orgs', err);
+                setOrgs([]);
                 setLoading(false);
-                // Mock data
-                setOrgs([
-                    { _id: 'o1', name: 'Acme Corp', website: 'acme.com', industry: 'Manufacturing', phone: '123-456', email: 'info@acme.com' },
-                    { _id: 'o2', name: 'Globex Inc', website: 'globex.com', industry: 'Technology', phone: '987-654', email: 'hello@globex.com' },
-                ]);
             });
     }, []);
 
-    const filteredOrgs = orgs.filter(o => o.name.toLowerCase().includes(search.toLowerCase()));
+    const filteredOrgs = Array.isArray(orgs) ? orgs.filter(o => o?.name?.toLowerCase().includes(search.toLowerCase())) : [];
 
     return (
         <div className="space-y-6">
@@ -47,7 +59,7 @@ export default function OrganizationsPage() {
                     <p className="text-sm text-gray-500">{filteredOrgs.length} organizations found</p>
                 </div>
                 <button
-                    onClick={() => window.dispatchEvent(new CustomEvent('trigger-quick-add', { detail: { type: 'Org' } }))}
+                    onClick={() => setIsModalOpen(true)}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors text-sm"
                 >
                     <Plus size={16} />
@@ -85,7 +97,15 @@ export default function OrganizationsPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y">
-                            {filteredOrgs.map(org => (
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-10 text-center text-gray-500">Loading organizations...</td>
+                                </tr>
+                            ) : filteredOrgs.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-10 text-center text-gray-500">No organizations found</td>
+                                </tr>
+                            ) : filteredOrgs.map(org => (
                                 <tr
                                     key={org._id}
                                     className="hover:bg-gray-50 cursor-pointer transition-colors group"
@@ -100,7 +120,7 @@ export default function OrganizationsPage() {
                                     <td className="px-6 py-4 text-gray-500">{org.website || '-'}</td>
                                     <td className="px-6 py-4">
                                         <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-xs font-medium">
-                                            {org.industry}
+                                            {org.industry || 'Unknown'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-gray-500">{org.phone || '-'}</td>
@@ -113,6 +133,7 @@ export default function OrganizationsPage() {
                     </table>
                 </div>
             </div>
+            <QuickAddModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} initialTab="Org" />
         </div>
     );
 }

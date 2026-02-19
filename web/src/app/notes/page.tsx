@@ -1,34 +1,76 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { FileText, Plus, Search } from 'lucide-react';
+import { FileText, Plus, Trash2, Edit2, X, Save } from 'lucide-react';
 
 interface Note {
     _id: string;
     content: string;
     title?: string;
     createdAt: string;
-    author?: {
-        name: string;
-    };
+    author?: { name: string };
 }
 
 export default function NotesPage() {
     const [notes, setNotes] = useState<Note[]>([]);
     const [loading, setLoading] = useState(true);
+    const [editingNote, setEditingNote] = useState<Note | null>(null);
+    const [editContent, setEditContent] = useState('');
+    const [editTitle, setEditTitle] = useState('');
 
-    useEffect(() => {
-        fetch('http://localhost:3001/crm/activities?type=Note')
-            .then(res => res.json())
-            .then(data => {
-                setNotes(data);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error('Failed to fetch notes', err);
-                setLoading(false);
+    const fetchNotes = async () => {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/crm/activities?type=Note`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-    }, []);
+            const text = await res.text();
+            const data = text ? JSON.parse(text) : [];
+            const notesArray = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+            setNotes(notesArray);
+        } catch (err) {
+            console.error('Failed to fetch notes', err);
+            setNotes([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchNotes(); }, []);
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Delete this note?')) return;
+        const token = localStorage.getItem('token');
+        try {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/crm/activities/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            setNotes(notes.filter(n => n._id !== id));
+        } catch (err) { console.error(err); }
+    };
+
+    const handleEdit = (note: Note) => {
+        setEditingNote(note);
+        setEditTitle(note.title || '');
+        setEditContent(note.content || '');
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingNote) return;
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/crm/activities/${editingNote._id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ title: editTitle, content: editContent })
+            });
+            if (res.ok) {
+                setEditingNote(null);
+                fetchNotes();
+            }
+        } catch (err) { console.error(err); }
+    };
 
     return (
         <div className="h-full flex flex-col space-y-6">
@@ -52,9 +94,7 @@ export default function NotesPage() {
                 </div>
             ) : notes.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-                    <div className="p-6 bg-slate-50 rounded-full text-slate-300">
-                        <FileText size={64} />
-                    </div>
+                    <div className="p-6 bg-slate-50 rounded-full text-slate-300"><FileText size={64} /></div>
                     <div>
                         <h3 className="text-lg font-semibold text-gray-900">No notes yet</h3>
                         <p className="text-slate-500">Create your first note to get started.</p>
@@ -63,25 +103,54 @@ export default function NotesPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {notes.map(note => (
-                        <div key={note._id} className="bg-white p-6 rounded-xl border hover:shadow-md transition-shadow group cursor-pointer">
+                        <div key={note._id} className="bg-white p-6 rounded-xl border hover:shadow-md transition-shadow group">
                             <div className="flex items-start justify-between mb-4">
-                                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                    <FileText size={20} />
+                                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><FileText size={20} /></div>
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => handleEdit(note)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-blue-600 transition-colors"><Edit2 size={14} /></button>
+                                    <button onClick={() => handleDelete(note._id)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-red-600 transition-colors"><Trash2 size={14} /></button>
                                 </div>
-                                <span className="text-xs font-medium text-slate-400">
-                                    {new Date(note.createdAt).toLocaleDateString()}
-                                </span>
                             </div>
                             <h3 className="font-bold text-gray-900 mb-2 line-clamp-1">{note.title || 'Untitled Note'}</h3>
-                            <p className="text-slate-500 text-sm line-clamp-3 mb-4">
-                                {note.content}
-                            </p>
+                            <p className="text-slate-500 text-sm line-clamp-3 mb-4">{note.content}</p>
                             <div className="pt-4 border-t border-slate-50 flex items-center justify-between text-xs text-slate-400">
                                 <span>{note.author?.name || 'Administrator'}</span>
-                                <span className="group-hover:text-blue-600 transition-colors">Read More &rarr;</span>
+                                <span>{new Date(note.createdAt).toLocaleDateString()}</span>
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Edit Modal */}
+            {editingNote && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-[32px] w-full max-w-lg shadow-2xl p-8">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-black text-slate-900">Edit Note</h2>
+                            <button onClick={() => setEditingNote(null)} className="p-2 hover:bg-slate-100 rounded-full"><X size={20} className="text-slate-400" /></button>
+                        </div>
+                        <div className="space-y-4">
+                            <input
+                                className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none font-bold text-slate-900"
+                                placeholder="Note title"
+                                value={editTitle}
+                                onChange={e => setEditTitle(e.target.value)}
+                            />
+                            <textarea
+                                className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none font-medium h-40 text-slate-900 resize-none"
+                                placeholder="Note content..."
+                                value={editContent}
+                                onChange={e => setEditContent(e.target.value)}
+                            />
+                            <div className="flex gap-4">
+                                <button onClick={() => setEditingNote(null)} className="flex-1 py-4 bg-slate-100 rounded-2xl font-black uppercase tracking-widest text-xs text-slate-600">Cancel</button>
+                                <button onClick={handleSaveEdit} className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2">
+                                    <Save size={14} /> Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

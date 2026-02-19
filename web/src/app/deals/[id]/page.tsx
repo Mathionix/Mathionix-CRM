@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { DollarSign, Calendar, Building2, ChevronLeft, MoreHorizontal, Send, TrendingUp } from 'lucide-react';
+import { DollarSign, Calendar, Building2, ChevronLeft, Edit2, Send, TrendingUp, Trash2 } from 'lucide-react';
 import Timeline from '@/components/Timeline';
+import EditModal from '@/components/EditModal';
+import PaymentTermsModal from '@/components/PaymentTermsModal';
+import { Copy, ExternalLink, CreditCard } from 'lucide-react';
 
 const STAGES = ['Qualification', 'Proposal', 'Negotiation', 'Won', 'Lost'];
 
@@ -15,6 +18,9 @@ export default function DealDetailPage() {
     const [loading, setLoading] = useState(true);
     const [newComment, setNewComment] = useState('');
     const [activityType, setActivityType] = useState('Comment');
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     const handlePostActivity = () => {
         if (!newComment.trim()) return;
@@ -29,6 +35,29 @@ export default function DealDetailPage() {
             setNewComment('');
             setActivityType('Comment');
         });
+    };
+
+    const copyPortalLink = () => {
+        const url = `${window.location.origin}/portal/${deal.portalToken}`;
+        navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const generatePortalToken = async () => {
+        const token = localStorage.getItem('token');
+        const newToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        try {
+            const res = await fetch(`http://localhost:3001/crm/deals/${id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ portalToken: newToken })
+            });
+            if (res.ok) setDeal({ ...deal, portalToken: newToken });
+        } catch (e) { console.error(e); }
     };
 
     useEffect(() => {
@@ -73,16 +102,52 @@ export default function DealDetailPage() {
                     </div>
                     <p className="text-gray-500 font-medium flex items-center gap-2">
                         <DollarSign size={16} />
-                        {deal.dealValue.toLocaleString()} &bull; Expected {new Date(deal.expectedClosureDate).toLocaleDateString()}
+                        {(deal.dealValue || 0).toLocaleString()} &bull; Expected {deal.expectedClosureDate ? new Date(deal.expectedClosureDate).toLocaleDateString() : 'N/A'}
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 transition-colors">
+                    <button
+                        onClick={async () => {
+                            if (confirm('Are you sure you want to delete this deal?')) {
+                                const token = localStorage.getItem('token');
+                                const res = await fetch(`http://localhost:3001/crm/deals/${id}`, {
+                                    method: 'DELETE',
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                if (res.ok) router.push('/deals');
+                            }
+                        }}
+                        className="px-4 py-2 bg-white border border-red-100 rounded-xl text-sm font-bold hover:bg-red-50 flex items-center gap-2 text-red-600 shadow-sm transition-all active:scale-95"
+                    >
+                        <Trash2 size={16} />
+                        Delete
+                    </button>
+                    <button
+                        onClick={() => setIsPaymentModalOpen(true)}
+                        className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 flex items-center gap-2 text-slate-700 shadow-sm transition-all active:scale-95"
+                    >
+                        <CreditCard size={16} className="text-blue-600" />
+                        Payments
+                    </button>
+                    <button
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 flex items-center gap-2 text-slate-700 shadow-sm transition-all active:scale-95"
+                    >
+                        <Edit2 size={16} className="text-slate-400" />
+                        Edit
+                    </button>
+                    <button className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95 uppercase tracking-widest text-[10px]">
                         Mark as Won
                     </button>
-                    <button className="p-2 border rounded-md hover:bg-gray-50 text-gray-500">
-                        <MoreHorizontal size={20} />
-                    </button>
+                    <EditModal
+                        isOpen={isEditModalOpen}
+                        onClose={() => setIsEditModalOpen(false)}
+                        type="Deal"
+                        initialData={deal}
+                        onSuccess={() => {
+                            fetch(`http://localhost:3001/crm/deals/${id}`).then(res => res.json()).then(data => setDeal(data));
+                        }}
+                    />
                 </div>
             </div>
 
@@ -177,8 +242,51 @@ export default function DealDetailPage() {
                             </div>
                         </div>
                     </div>
+
+                    <div className="bg-white border border-slate-100 rounded-[32px] p-8 shadow-sm">
+                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Client Portal</h3>
+                        {deal.portalToken ? (
+                            <div className="space-y-4">
+                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 break-all text-[10px] font-mono text-slate-500">
+                                    {window.location.host}/portal/{deal.portalToken}
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={copyPortalLink}
+                                        className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all active:scale-95"
+                                    >
+                                        <Copy size={14} />
+                                        {copied ? 'Copied!' : 'Copy Link'}
+                                    </button>
+                                    <a
+                                        href={`/portal/${deal.portalToken}`}
+                                        target="_blank"
+                                        className="p-3.5 bg-white border border-slate-200 text-slate-400 hover:text-blue-600 rounded-2xl transition-all"
+                                    >
+                                        <ExternalLink size={18} />
+                                    </a>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <p className="text-sm text-slate-500 font-medium">Enable the secure portal to share progress with your client.</p>
+                                <button
+                                    onClick={generatePortalToken}
+                                    className="w-full flex items-center justify-center gap-2 py-3.5 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+                                >
+                                    Enable Client Portal
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
+
+            <PaymentTermsModal
+                isOpen={isPaymentModalOpen}
+                onClose={() => setIsPaymentModalOpen(false)}
+                dealId={id as string}
+            />
         </div>
     );
 }

@@ -10,7 +10,16 @@ interface Activity {
     author?: { name: string };
 }
 
-export default function Timeline({ activities }: { activities: Activity[] }) {
+function normalizeActivities(data: any): Activity[] {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.data)) return data.data;
+    if (data && Array.isArray(data.activities)) return data.activities;
+    return [];
+}
+
+export default function Timeline({ activities }: { activities?: any }) {
+    const items = normalizeActivities(activities);
+
     const getIcon = (type: string) => {
         switch (type) {
             case 'Comment': return <MessageSquare size={14} className="text-blue-500" />;
@@ -24,7 +33,7 @@ export default function Timeline({ activities }: { activities: Activity[] }) {
 
     return (
         <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
-            {activities.map((activity) => (
+            {items.map((activity) => (
                 <div key={activity._id} className="relative flex items-start group">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white border shadow-sm z-10 group-hover:scale-110 transition-transform">
                         {getIcon(activity.type)}
@@ -48,7 +57,7 @@ export default function Timeline({ activities }: { activities: Activity[] }) {
                 </div>
             ))}
 
-            {activities.length === 0 && (
+            {items.length === 0 && (
                 <div className="text-center py-12 text-gray-400 italic">
                     No activity recorded yet.
                 </div>

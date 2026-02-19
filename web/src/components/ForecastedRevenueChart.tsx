@@ -11,20 +11,19 @@ import {
     Cell
 } from 'recharts';
 
-const data = [
-    { name: 'Q1', value: 45000 },
-    { name: 'Q2', value: 52000 },
-    { name: 'Q3', value: 48000 },
-    { name: 'Q4', value: 61000 },
-];
-
 const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#a855f7'];
 
-export default function ForecastedRevenueChart() {
+export default function ForecastedRevenueChart({ data = [] }: { data?: any[] }) {
+    const chartData = data?.length ? data : [
+        { name: 'Jan', value: 0 },
+        { name: 'Feb', value: 0 },
+        { name: 'Mar', value: 0 },
+    ];
+
     return (
         <div className="h-full w-full">
             <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis
                         dataKey="name"

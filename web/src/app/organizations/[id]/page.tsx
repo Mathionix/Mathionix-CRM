@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Building2, Globe, Mail, Phone, ChevronLeft, MapPin, Briefcase, Send } from 'lucide-react';
+import { Building2, Globe, Mail, Phone, ChevronLeft, MapPin, Briefcase, Send, Trash2, Edit2 } from 'lucide-react';
 import Timeline from '@/components/Timeline';
+import EditModal from '@/components/EditModal';
 
 export default function OrganizationDetailPage() {
     const { id } = useParams();
@@ -12,11 +13,16 @@ export default function OrganizationDetailPage() {
     const [activities, setActivities] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [newComment, setNewComment] = useState('');
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     useEffect(() => {
+        const token = localStorage.getItem('token');
         Promise.all([
-            fetch(`http://localhost:3001/crm/organizations/${id}`).then(res => res.json()),
-            fetch(`http://localhost:3001/crm/activities?relatedTo=${id}`).then(res => res.json())
+            fetch(`http://localhost:3001/crm/organizations/${id}`, { headers: { 'Authorization': `Bearer ${token}` } }).then(res => {
+                if (res.status === 401) window.location.href = '/auth/login';
+                return res.json();
+            }),
+            fetch(`http://localhost:3001/crm/activities?relatedTo=${id}`, { headers: { 'Authorization': `Bearer ${token}` } }).then(res => res.json())
         ]).then(([orgData, activityData]) => {
             setOrg(orgData);
             setActivities(activityData);
@@ -39,9 +45,13 @@ export default function OrganizationDetailPage() {
         if (!newComment.trim()) return;
         const activity = { type: activityType, content: newComment, relatedTo: id, relatedType: 'Organization' };
 
+        const token = localStorage.getItem('token');
         fetch('http://localhost:3001/crm/activities', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify(activity)
         }).then(res => res.json()).then(data => {
             setActivities([data, ...activities]);
@@ -72,6 +82,42 @@ export default function OrganizationDetailPage() {
                             <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-xs font-bold uppercase">{org.industry}</span>
                         </div>
                     </div>
+                </div>
+                <div className="flex gap-3">
+                    <button
+                        onClick={async () => {
+                            if (confirm('Are you sure you want to delete this organization?')) {
+                                const token = localStorage.getItem('token');
+                                const res = await fetch(`http://localhost:3001/crm/organizations/${id}`, {
+                                    method: 'DELETE',
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                if (res.ok) router.push('/organizations');
+                            }
+                        }}
+                        className="px-4 py-2 border border-red-100 text-red-600 rounded-md text-sm font-medium hover:bg-red-50 flex items-center gap-2"
+                    >
+                        <Trash2 size={16} />
+                        Delete
+                    </button>
+                    <button
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                        <Edit2 size={16} />
+                        Edit Organization
+                    </button>
+                    <EditModal
+                        isOpen={isEditModalOpen}
+                        onClose={() => setIsEditModalOpen(false)}
+                        type="Org"
+                        initialData={org}
+                        onSuccess={() => {
+                            fetch(`http://localhost:3001/crm/organizations/${id}`, {
+                                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                            }).then(r => r.json()).then(data => setOrg(data));
+                        }}
+                    />
                 </div>
             </div>
 
@@ -159,6 +205,6 @@ export default function OrganizationDetailPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

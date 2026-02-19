@@ -21,6 +21,7 @@ let Organization = class Organization {
     phone;
     email;
     address;
+    customFields;
 };
 exports.Organization = Organization;
 __decorate([
@@ -59,6 +60,10 @@ __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
 ], Organization.prototype, "address", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Map, of: String }),
+    __metadata("design:type", Map)
+], Organization.prototype, "customFields", void 0);
 exports.Organization = Organization = __decorate([
     (0, mongoose_1.Schema)({ timestamps: true })
 ], Organization);

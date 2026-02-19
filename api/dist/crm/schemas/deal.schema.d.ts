@@ -4,7 +4,8 @@ export declare class Deal {
     organization: string;
     title: string;
     probability: number;
-    status: string;
+    pipeline: Types.ObjectId;
+    stage: string;
     dealValue: number;
     expectedDealValue: number;
     dealOwner: string;
@@ -15,6 +16,9 @@ export declare class Deal {
     nextStep: string;
     currency: string;
     exchangeRate: number;
+    customFields: Map<string, string>;
+    createdBy: Types.ObjectId;
+    portalToken: string;
 }
 export declare const DealSchema: import("mongoose").Schema<Deal, import("mongoose").Model<Deal, any, any, any, (Document<unknown, any, Deal, any, import("mongoose").DefaultSchemaOptions> & Deal & {
     _id: Types.ObjectId;
@@ -62,7 +66,16 @@ export declare const DealSchema: import("mongoose").Schema<Deal, import("mongoos
     }, "id"> & {
         id: string;
     }> | undefined;
-    status?: import("mongoose").SchemaDefinitionProperty<string, Deal, Document<unknown, {}, Deal, {
+    pipeline?: import("mongoose").SchemaDefinitionProperty<Types.ObjectId, Deal, Document<unknown, {}, Deal, {
+        id: string;
+    }, import("mongoose").DefaultSchemaOptions> & Omit<Deal & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    stage?: import("mongoose").SchemaDefinitionProperty<string, Deal, Document<unknown, {}, Deal, {
         id: string;
     }, import("mongoose").DefaultSchemaOptions> & Omit<Deal & {
         _id: Types.ObjectId;
@@ -153,6 +166,33 @@ export declare const DealSchema: import("mongoose").Schema<Deal, import("mongoos
         id: string;
     }> | undefined;
     exchangeRate?: import("mongoose").SchemaDefinitionProperty<number, Deal, Document<unknown, {}, Deal, {
+        id: string;
+    }, import("mongoose").DefaultSchemaOptions> & Omit<Deal & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    customFields?: import("mongoose").SchemaDefinitionProperty<Map<string, string>, Deal, Document<unknown, {}, Deal, {
+        id: string;
+    }, import("mongoose").DefaultSchemaOptions> & Omit<Deal & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    createdBy?: import("mongoose").SchemaDefinitionProperty<Types.ObjectId, Deal, Document<unknown, {}, Deal, {
+        id: string;
+    }, import("mongoose").DefaultSchemaOptions> & Omit<Deal & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    portalToken?: import("mongoose").SchemaDefinitionProperty<string, Deal, Document<unknown, {}, Deal, {
         id: string;
     }, import("mongoose").DefaultSchemaOptions> & Omit<Deal & {
         _id: Types.ObjectId;

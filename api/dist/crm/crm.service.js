@@ -1,10 +1,43 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
@@ -21,18 +54,25 @@ const deal_schema_1 = require("./schemas/deal.schema");
 const organization_schema_1 = require("./schemas/organization.schema");
 const contact_schema_1 = require("./schemas/contact.schema");
 const activity_schema_1 = require("./schemas/activity.schema");
+const reporting_service_1 = require("./reporting.service");
+const XLSX = __importStar(require("xlsx"));
 let CRMService = class CRMService {
     leadModel;
     dealModel;
     organizationModel;
     contactModel;
     activityModel;
-    constructor(leadModel, dealModel, organizationModel, contactModel, activityModel) {
+    reportingService;
+    constructor(leadModel, dealModel, organizationModel, contactModel, activityModel, reportingService) {
         this.leadModel = leadModel;
         this.dealModel = dealModel;
         this.organizationModel = organizationModel;
         this.contactModel = contactModel;
         this.activityModel = activityModel;
+        this.reportingService = reportingService;
+    }
+    async getDashboardStats(days = 30, owner) {
+        return this.reportingService.getDashboardData();
     }
     async createLead(dto) {
         return new this.leadModel(dto).save();
@@ -72,6 +112,9 @@ let CRMService = class CRMService {
     async findAllOrganizations() {
         return this.organizationModel.find().exec();
     }
+    async findAllOrganizationsList() {
+        return this.organizationModel.find({}, { name: 1 }).exec();
+    }
     async findOneOrganization(id) {
         if (!id.match(/^[0-9a-fA-F]{24}$/))
             return null;
@@ -87,6 +130,9 @@ let CRMService = class CRMService {
     }
     async findAllContacts() {
         return this.contactModel.find().populate('organization').exec();
+    }
+    async findAllContactsList() {
+        return this.contactModel.find({}, { firstName: 1, lastName: 1 }).exec();
     }
     async findOneContact(id) {
         if (!id.match(/^[0-9a-fA-F]{24}$/))
@@ -109,60 +155,98 @@ let CRMService = class CRMService {
             filter.type = type;
         return this.activityModel.find(filter).sort({ createdAt: -1 }).exec();
     }
-    async getDashboardStats(days = 30, owner) {
-        const dateLimit = new Date();
-        dateLimit.setDate(dateLimit.getDate() - days);
-        const filter = { createdAt: { $gte: dateLimit } };
-        if (owner && owner !== 'All') {
-            filter.leadOwner = owner;
+    async updateActivity(id, dto) {
+        if (!id.match(/^[0-9a-fA-F]{24}$/))
+            return null;
+        return this.activityModel.findByIdAndUpdate(id, dto, { new: true }).exec();
+    }
+    async removeLead(id) {
+        return this.leadModel.findByIdAndDelete(id).exec();
+    }
+    async removeDeal(id) {
+        return this.dealModel.findByIdAndDelete(id).exec();
+    }
+    async removeOrganization(id) {
+        return this.organizationModel.findByIdAndDelete(id).exec();
+    }
+    async removeContact(id) {
+        return this.contactModel.findByIdAndDelete(id).exec();
+    }
+    async removeActivity(id) {
+        return this.activityModel.findByIdAndDelete(id).exec();
+    }
+    async exportToCsv(type) {
+        let data = [];
+        let headers = [];
+        switch (type) {
+            case 'leads':
+                data = await this.leadModel.find().lean();
+                headers = ['_id', 'title', 'company', 'value', 'status', 'email', 'phone', 'createdAt'];
+                break;
+            case 'deals':
+                data = await this.dealModel.find().lean();
+                headers = ['_id', 'title', 'value', 'stage', 'probability', 'expectedCloseDate', 'createdAt'];
+                break;
+            case 'contacts':
+                data = await this.contactModel.find().lean();
+                headers = ['_id', 'firstName', 'lastName', 'email', 'phone', 'jobTitle', 'createdAt'];
+                break;
+            default:
+                throw new Error('Invalid export type');
         }
-        const totalLeads = await this.leadModel.countDocuments(filter);
-        const ongoingDeals = await this.dealModel.countDocuments({ ...filter, status: { $nin: ['Won', 'Lost'] } });
-        const wonDealsReq = await this.dealModel.find({ ...filter, status: 'Won' });
-        const wonDeals = wonDealsReq.length;
-        const allDeals = await this.dealModel.find(filter);
-        const totalDealValue = allDeals.reduce((sum, d) => sum + (d.dealValue || 0), 0);
-        const avgDealValue = allDeals.length ? Math.round(totalDealValue / allDeals.length) : 0;
-        const totalWonValue = wonDealsReq.reduce((sum, d) => sum + (d.dealValue || 0), 0);
-        const avgWonDealValue = wonDeals ? Math.round(totalWonValue / wonDeals) : 0;
-        const avgLeadCloseTime = 4.2;
-        const avgDealCloseTime = 12.5;
-        const funnel = [
-            { label: 'Total Leads', val: totalLeads, color: 'bg-blue-600', w: 'w-full' },
-            { label: 'Qualified', val: await this.leadModel.countDocuments({ ...filter, status: 'Qualified' }), color: 'bg-blue-500', w: 'w-4/5' },
-            { label: 'Replied', val: await this.leadModel.countDocuments({ ...filter, status: 'Replied' }), color: 'bg-blue-400', w: 'w-2/3' },
-            { label: 'Opportunity', val: await this.leadModel.countDocuments({ ...filter, status: 'Opportunity' }), color: 'bg-blue-300', w: 'w-1/2' },
-            { label: 'Won', val: wonDeals, color: 'bg-green-500', w: 'w-1/3' },
+        const csvRows = [
+            headers.join(','),
+            ...data.map(row => headers.map(fieldName => {
+                const value = row[fieldName] || '';
+                const escaped = ('' + value).replace(/"/g, '""');
+                return `"${escaped}"`;
+            }).join(','))
         ];
-        const prevDateLimit = new Date();
-        prevDateLimit.setDate(prevDateLimit.getDate() - (days * 2));
-        const prevFilter = { createdAt: { $gte: prevDateLimit, $lt: dateLimit } };
-        if (owner && owner !== 'All') {
-            prevFilter.leadOwner = owner;
-        }
-        const prevLeads = await this.leadModel.countDocuments(prevFilter);
-        const leadDelta = prevLeads ? Math.round(((totalLeads - prevLeads) / prevLeads) * 100) : 0;
-        return {
-            stats: [
-                { name: 'total_leads', value: totalLeads, delta: leadDelta, deltaSuffix: '%', title: 'Total Leads' },
-                { name: 'ongoing_deals', value: ongoingDeals, delta: 2, deltaSuffix: '%', title: 'Ongoing Deals' },
-                { name: 'won_deals', value: wonDeals, delta: 10, deltaSuffix: '%', title: 'Won Deals' },
-                { name: 'conversion_rate', value: totalLeads ? Math.round((wonDeals / totalLeads) * 1000) / 10 : 0, delta: 0, deltaSuffix: '%', title: 'Conversion Rate' },
-                { name: 'avg_won_deal_value', value: `₹${avgWonDealValue.toLocaleString()}`, delta: 5, deltaSuffix: '%', title: 'Avg. Won Deal Value' },
-                { name: 'avg_deal_value', value: `₹${avgDealValue.toLocaleString()}`, delta: -2, deltaSuffix: '%', title: 'Avg. Deal Value' },
-                { name: 'avg_lead_close_time', value: `${avgLeadCloseTime} days`, delta: 0, deltaSuffix: '%', title: 'Avg. Lead Close Time' },
-                { name: 'avg_deal_close_time', value: `${avgDealCloseTime} days`, delta: 0, deltaSuffix: '%', title: 'Avg. Deal Close Time' }
-            ],
-            funnel,
-            charts: {
-                revenueForecast: [
-                    { name: 'Jan', value: 4000 }, { name: 'Feb', value: 3000 }, { name: 'Mar', value: 5000 }
-                ],
-                dealsByStage: [
-                    { name: 'Discovery', value: 40 }, { name: 'Proposal', value: 30 }, { name: 'Negotiation', value: 20 }
-                ]
+        return csvRows.join('\r\n');
+    }
+    async importFromExcel(type, buffer) {
+        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        let count = 0;
+        for (const row of jsonData) {
+            try {
+                if (type === 'leads') {
+                    await this.leadModel.create({
+                        firstName: row.FirstName || row.firstName || row.Title?.split(' ')[0] || 'Unknown',
+                        lastName: row.LastName || row.lastName || row.Title?.split(' ').slice(1).join(' ') || 'Lead',
+                        organization: row.Company || row.company || row.Organization,
+                        status: row.Status || row.status || 'New',
+                        email: row.Email || row.email,
+                        phone: row.Phone || row.phone,
+                    });
+                }
+                else if (type === 'deals') {
+                    await this.dealModel.create({
+                        title: row.Title || row.title || 'Untitled Deal',
+                        dealValue: Number(row.Value || row.value || 0),
+                        stage: row.Stage || row.stage || row.Status || row.status || 'Qualification',
+                        probability: Number(row.Probability || row.probability || 20),
+                        expectedClosureDate: row.CloseDate || row.Date || new Date(),
+                    });
+                }
+                else if (type === 'contacts') {
+                    await this.contactModel.create({
+                        firstName: row.FirstName || row['First Name'] || 'Unknown',
+                        lastName: row.LastName || row['Last Name'] || 'User',
+                        email: row.Email || row.email,
+                        phone: row.Phone || row.phone,
+                        jobTitle: row.JobTitle || row['Job Title'] || 'Contact',
+                    });
+                }
+                count++;
             }
-        };
+            catch (err) {
+                console.error(`Failed to import row:`, err.message);
+            }
+        }
+        return { count };
     }
 };
 exports.CRMService = CRMService;
@@ -177,6 +261,7 @@ exports.CRMService = CRMService = __decorate([
         mongoose_2.Model,
         mongoose_2.Model,
         mongoose_2.Model,
-        mongoose_2.Model])
+        mongoose_2.Model,
+        reporting_service_1.ReportingService])
 ], CRMService);
 //# sourceMappingURL=crm.service.js.map

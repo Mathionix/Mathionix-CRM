@@ -11,6 +11,7 @@ export declare class Contact {
     gender: string;
     salutation: string;
     address: string;
+    customFields: Map<string, string>;
 }
 export declare const ContactSchema: import("mongoose").Schema<Contact, import("mongoose").Model<Contact, any, any, any, (Document<unknown, any, Contact, any, import("mongoose").DefaultSchemaOptions> & Contact & {
     _id: Types.ObjectId;
@@ -113,6 +114,15 @@ export declare const ContactSchema: import("mongoose").Schema<Contact, import("m
         id: string;
     }> | undefined;
     address?: import("mongoose").SchemaDefinitionProperty<string, Contact, Document<unknown, {}, Contact, {
+        id: string;
+    }, import("mongoose").DefaultSchemaOptions> & Omit<Contact & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    customFields?: import("mongoose").SchemaDefinitionProperty<Map<string, string>, Contact, Document<unknown, {}, Contact, {
         id: string;
     }, import("mongoose").DefaultSchemaOptions> & Omit<Contact & {
         _id: Types.ObjectId;

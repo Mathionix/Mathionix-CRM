@@ -1,0 +1,8 @@
+Starting debug process...
+Starting debug process...
+Checking user: admin@mathionixcrm.com
+User found: 69956b35c32eae65bd3d005c
+Role Name: Admin
+Role ID: 69955afc910f8b4d2aeb58bb
+Permissions count: 13
+Permissions: ["leads:read","leads:write","leads:delete","deals:read","deals:write","contacts:read","contacts:write","orgs:read","orgs:write","activities:read","activities:write","settings:admin","dashboard:read"]

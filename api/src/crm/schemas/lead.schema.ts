@@ -58,6 +58,12 @@ export class Lead {
 
     @Prop()
     image: string;
+
+    @Prop({ type: Map, of: String })
+    customFields: Map<string, string>;
+
+    @Prop({ type: Types.ObjectId, ref: 'User' })
+    createdBy: Types.ObjectId;
 }
 
 export const LeadSchema = SchemaFactory.createForClass(Lead);

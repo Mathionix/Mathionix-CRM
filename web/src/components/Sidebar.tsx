@@ -15,11 +15,16 @@ import {
     ChevronDown,
     FileText,
     CheckCircle,
-    PhoneCall
+    PhoneCall,
+    Settings,
+    UserCheck,
+    TrendingUp
 } from 'lucide-react';
 
 const navItems = [
     { name: 'Dashboard', href: '/', icon: BarChart3 },
+    { name: 'Reports', href: '/reports', icon: TrendingUp },
+    { name: 'Clients', href: '/clients', icon: UserCheck },
     { name: 'Leads', href: '/leads', icon: Users },
     { name: 'Deals', href: '/deals', icon: Handshake },
     { name: 'Organizations', href: '/organizations', icon: Building2 },
@@ -27,6 +32,7 @@ const navItems = [
     { name: 'Notes', href: '/notes', icon: FileText },
     { name: 'Tasks', href: '/tasks', icon: CheckCircle },
     { name: 'Call Logs', href: '/calls', icon: PhoneCall },
+    { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -41,8 +47,8 @@ export default function Sidebar() {
     return (
         <div className="w-68 bg-[#0f172a] text-slate-300 h-screen flex flex-col shadow-2xl z-20 transition-all duration-300">
             <div className="p-6 flex items-center gap-3 border-b border-slate-800/50">
-                <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                    <span className="font-black text-lg">M</span>
+                <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center overflow-hidden shadow-lg shadow-blue-500/10 border border-slate-700">
+                    <img src="/logo.jpg" alt="Logo" className="w-full h-full object-cover" />
                 </div>
                 <span className="font-bold text-lg text-white tracking-tight">Mathionix CRM</span>
             </div>

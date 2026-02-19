@@ -1,9 +1,10 @@
 "use client";
 
 import Sidebar from './Sidebar';
-import { Search, Bell, HelpCircle, LogOut } from 'lucide-react';
+import { Bell, HelpCircle, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import QuickAddModal from './QuickAddModal';
+import GlobalSearch from './GlobalSearch';
 import { useState, useEffect } from 'react';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -26,14 +27,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex-1 flex flex-col overflow-hidden relative">
                 <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center px-8 justify-between shrink-0 sticky top-0 z-10">
                     <div className="flex items-center gap-6 flex-1">
-                        <div className="relative max-w-md w-full group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={18} />
-                            <input
-                                type="text"
-                                placeholder="Search leads, deals, or contacts..."
-                                className="w-full bg-slate-100/50 border-none rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all focus:bg-white"
-                            />
-                        </div>
+                        <GlobalSearch />
                     </div>
 
                     <div className="flex items-center gap-5">

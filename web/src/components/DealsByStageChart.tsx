@@ -9,16 +9,14 @@ import {
     Legend
 } from 'recharts';
 
-const data = [
-    { name: 'Discovery', value: 40 },
-    { name: 'Proposal', value: 30 },
-    { name: 'Negotiation', value: 20 },
-    { name: 'Closed', value: 10 },
-];
-
 const COLORS = ['#3b82f6', '#6366f1', '#f59e0b', '#10b981'];
 
-export default function DealsByStageChart() {
+export default function DealsByStageChart({ data = [] }: { data?: any[] }) {
+    const chartData = data?.length ? data : [
+        { name: 'New', value: 0 },
+        { name: 'Qualified', value: 0 },
+    ];
+
     return (
         <div className="h-full w-full">
             <ResponsiveContainer width="100%" height="100%">

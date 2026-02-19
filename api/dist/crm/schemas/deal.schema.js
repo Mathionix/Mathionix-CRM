@@ -16,7 +16,8 @@ let Deal = class Deal {
     organization;
     title;
     probability;
-    status;
+    pipeline;
+    stage;
     dealValue;
     expectedDealValue;
     dealOwner;
@@ -27,6 +28,9 @@ let Deal = class Deal {
     nextStep;
     currency;
     exchangeRate;
+    customFields;
+    createdBy;
+    portalToken;
 };
 exports.Deal = Deal;
 __decorate([
@@ -42,9 +46,13 @@ __decorate([
     __metadata("design:type", Number)
 ], Deal.prototype, "probability", void 0);
 __decorate([
+    (0, mongoose_1.Prop)({ type: mongoose_2.Types.ObjectId, ref: 'Pipeline' }),
+    __metadata("design:type", mongoose_2.Types.ObjectId)
+], Deal.prototype, "pipeline", void 0);
+__decorate([
     (0, mongoose_1.Prop)({ required: true, default: 'Qualification' }),
     __metadata("design:type", String)
-], Deal.prototype, "status", void 0);
+], Deal.prototype, "stage", void 0);
 __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", Number)
@@ -85,6 +93,18 @@ __decorate([
     (0, mongoose_1.Prop)({ default: 1 }),
     __metadata("design:type", Number)
 ], Deal.prototype, "exchangeRate", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Map, of: String }),
+    __metadata("design:type", Map)
+], Deal.prototype, "customFields", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: mongoose_2.Types.ObjectId, ref: 'User' }),
+    __metadata("design:type", mongoose_2.Types.ObjectId)
+], Deal.prototype, "createdBy", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ unique: true, sparse: true }),
+    __metadata("design:type", String)
+], Deal.prototype, "portalToken", void 0);
 exports.Deal = Deal = __decorate([
     (0, mongoose_1.Schema)({ timestamps: true })
 ], Deal);

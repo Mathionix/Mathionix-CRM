@@ -11,5 +11,4 @@ export declare class AuthController {
             role: any;
         };
     }>;
-    register(userDto: any): Promise<import("../users/schemas/user.schema").UserDocument>;
 }

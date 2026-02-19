@@ -19,6 +19,8 @@ export declare class Lead {
     website: string;
     territory: string;
     image: string;
+    customFields: Map<string, string>;
+    createdBy: Types.ObjectId;
 }
 export declare const LeadSchema: import("mongoose").Schema<Lead, import("mongoose").Model<Lead, any, any, any, (Document<unknown, any, Lead, any, import("mongoose").DefaultSchemaOptions> & Lead & {
     _id: Types.ObjectId;
@@ -193,6 +195,24 @@ export declare const LeadSchema: import("mongoose").Schema<Lead, import("mongoos
         id: string;
     }> | undefined;
     image?: import("mongoose").SchemaDefinitionProperty<string, Lead, Document<unknown, {}, Lead, {
+        id: string;
+    }, import("mongoose").DefaultSchemaOptions> & Omit<Lead & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    customFields?: import("mongoose").SchemaDefinitionProperty<Map<string, string>, Lead, Document<unknown, {}, Lead, {
+        id: string;
+    }, import("mongoose").DefaultSchemaOptions> & Omit<Lead & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    createdBy?: import("mongoose").SchemaDefinitionProperty<Types.ObjectId, Lead, Document<unknown, {}, Lead, {
         id: string;
     }, import("mongoose").DefaultSchemaOptions> & Omit<Lead & {
         _id: Types.ObjectId;

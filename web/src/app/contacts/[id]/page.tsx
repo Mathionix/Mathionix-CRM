@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { User, Mail, Phone, Building2, ChevronLeft, MapPin, Briefcase, Send, MessageCircle } from 'lucide-react';
+import { User, Mail, Phone, Building2, ChevronLeft, MapPin, Briefcase, Send, MessageCircle, Edit2, Trash2 } from 'lucide-react';
 import Timeline from '@/components/Timeline';
+import EditModal from '@/components/EditModal';
 
 export default function ContactDetailPage() {
     const { id } = useParams();
@@ -12,6 +13,7 @@ export default function ContactDetailPage() {
     const [activities, setActivities] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [newComment, setNewComment] = useState('');
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     useEffect(() => {
         Promise.all([
@@ -68,17 +70,49 @@ export default function ContactDetailPage() {
                         <h1 className="text-3xl font-bold text-gray-900">{contact.firstName} {contact.lastName}</h1>
                         <p className="text-gray-500 font-medium flex items-center gap-2 mt-1">
                             <Briefcase size={16} className="text-gray-400" />
-                            {contact.jobTitle} at <span className="text-blue-600 font-semibold">{contact.organization?.name || 'Unknown'}</span>
+                            {contact.jobTitle} at <span className="text-blue-600 font-semibold">{contact.organization?.name || contact.organization || 'Unknown'}</span>
                         </p>
                     </div>
                 </div>
                 <div className="flex gap-3">
+                    <button
+                        onClick={async () => {
+                            if (confirm('Are you sure you want to delete this contact?')) {
+                                const token = localStorage.getItem('token');
+                                const res = await fetch(`http://localhost:3001/crm/contacts/${id}`, {
+                                    method: 'DELETE',
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                if (res.ok) router.push('/contacts');
+                            }
+                        }}
+                        className="p-3 bg-white border border-red-100 text-red-500 hover:bg-red-50 rounded-full transition-all hover:shadow-md"
+                    >
+                        <Trash2 size={20} />
+                    </button>
+                    <button
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="p-3 bg-white border rounded-full text-gray-500 hover:text-blue-600 hover:border-blue-200 transition-all hover:shadow-md"
+                    >
+                        <Edit2 size={20} />
+                    </button>
                     <button className="p-3 bg-white border rounded-full text-gray-500 hover:text-blue-600 hover:border-blue-200 transition-all hover:shadow-md">
                         <Mail size={20} />
                     </button>
                     <button className="p-3 bg-white border rounded-full text-gray-500 hover:text-green-600 hover:border-green-200 transition-all hover:shadow-md">
                         <MessageCircle size={20} />
                     </button>
+                    <EditModal
+                        isOpen={isEditModalOpen}
+                        onClose={() => setIsEditModalOpen(false)}
+                        type="Contact"
+                        initialData={contact}
+                        onSuccess={() => {
+                            fetch(`http://localhost:3001/crm/contacts/${id}`)
+                                .then(res => res.json())
+                                .then(data => setContact(data));
+                        }}
+                    />
                 </div>
             </div>
 

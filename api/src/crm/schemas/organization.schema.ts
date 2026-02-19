@@ -31,6 +31,9 @@ export class Organization {
 
     @Prop()
     address: string;
+
+    @Prop({ type: Map, of: String })
+    customFields: Map<string, string>;
 }
 
 export const OrganizationSchema = SchemaFactory.createForClass(Organization);

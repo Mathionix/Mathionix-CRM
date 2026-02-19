@@ -8,6 +8,7 @@ export class AuthController {
 
     @Post('login')
     async login(@Body() req) {
+        console.log('Login attempt:', req);
         return this.authService.validateUser(req.email, req.password).then((user) => {
             if (!user) {
                 throw new UnauthorizedException();
@@ -16,8 +17,8 @@ export class AuthController {
         });
     }
 
-    @Post('register')
-    async register(@Body() userDto) {
-        return this.authService.register(userDto);
-    }
+    // @Post('register')
+    // async register(@Body() userDto) {
+    //     return this.authService.register(userDto);
+    // }
 }

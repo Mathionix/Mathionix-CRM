@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LeadSchema = exports.Lead = void 0;
 const mongoose_1 = require("@nestjs/mongoose");
+const mongoose_2 = require("mongoose");
 let Lead = class Lead {
     firstName;
     middleName;
@@ -30,6 +31,8 @@ let Lead = class Lead {
     website;
     territory;
     image;
+    customFields;
+    createdBy;
 };
 exports.Lead = Lead;
 __decorate([
@@ -104,6 +107,14 @@ __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
 ], Lead.prototype, "image", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Map, of: String }),
+    __metadata("design:type", Map)
+], Lead.prototype, "customFields", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: mongoose_2.Types.ObjectId, ref: 'User' }),
+    __metadata("design:type", mongoose_2.Types.ObjectId)
+], Lead.prototype, "createdBy", void 0);
 exports.Lead = Lead = __decorate([
     (0, mongoose_1.Schema)({ timestamps: true })
 ], Lead);

@@ -14,8 +14,11 @@ export class Deal {
     @Prop({ default: 0 })
     probability: number;
 
+    @Prop({ type: Types.ObjectId, ref: 'Pipeline' })
+    pipeline: Types.ObjectId;
+
     @Prop({ required: true, default: 'Qualification' })
-    status: string; // Ref to CRM Deal Status
+    stage: string; // Current stage in the pipeline
 
     @Prop()
     dealValue: number;
@@ -46,6 +49,15 @@ export class Deal {
 
     @Prop({ default: 1 })
     exchangeRate: number;
+
+    @Prop({ type: Map, of: String })
+    customFields: Map<string, string>;
+
+    @Prop({ type: Types.ObjectId, ref: 'User' })
+    createdBy: Types.ObjectId;
+
+    @Prop({ unique: true, sparse: true })
+    portalToken: string;
 }
 
 export const DealSchema = SchemaFactory.createForClass(Deal);

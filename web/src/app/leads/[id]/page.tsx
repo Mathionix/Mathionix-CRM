@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Mail, Phone, Building2, Calendar, Edit2, ChevronLeft, Send } from 'lucide-react';
+import { Mail, Phone, Building2, Calendar, Edit2, ChevronLeft, Send, Trash2 } from 'lucide-react';
 import Timeline from '@/components/Timeline';
+import EditModal from '@/components/EditModal';
 
 export default function LeadDetailPage() {
     const { id } = useParams();
@@ -12,12 +13,16 @@ export default function LeadDetailPage() {
     const [activities, setActivities] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [newComment, setNewComment] = useState('');
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     useEffect(() => {
-        // In a real app, these would be separate calls
+        const token = localStorage.getItem('token');
         Promise.all([
-            fetch(`http://localhost:3001/crm/leads/${id}`).then(res => res.json()),
-            fetch(`http://localhost:3001/crm/activities?relatedTo=${id}`).then(res => res.json())
+            fetch(`http://localhost:3001/crm/leads/${id}`, { headers: { 'Authorization': `Bearer ${token}` } }).then(res => {
+                if (res.status === 401) window.location.href = '/auth/login';
+                return res.json();
+            }),
+            fetch(`http://localhost:3001/crm/activities?relatedTo=${id}`, { headers: { 'Authorization': `Bearer ${token}` } }).then(res => res.json())
         ]).then(([leadData, activityData]) => {
             setLead(leadData);
             setActivities(activityData);
@@ -43,9 +48,13 @@ export default function LeadDetailPage() {
         if (!newComment.trim()) return;
         const activity = { type: activityType, content: newComment, relatedTo: id, relatedType: 'Lead' };
 
+        const token = localStorage.getItem('token');
         fetch('http://localhost:3001/crm/activities', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify(activity)
         }).then(res => res.json()).then(data => {
             setActivities([data, ...activities]);
@@ -84,13 +93,62 @@ export default function LeadDetailPage() {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-gray-50 flex items-center gap-2">
+                    <button
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-gray-50 flex items-center gap-2"
+                    >
                         <Edit2 size={16} />
                         Edit
                     </button>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
+                    <button
+                        onClick={async () => {
+                            if (confirm('Are you sure you want to delete this lead?')) {
+                                const token = localStorage.getItem('token');
+                                const res = await fetch(`http://localhost:3001/crm/leads/${id}`, {
+                                    method: 'DELETE',
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                if (res.ok) router.push('/leads');
+                            }
+                        }}
+                        className="px-4 py-2 border border-red-100 text-red-600 rounded-md text-sm font-medium hover:bg-red-50 flex items-center gap-2"
+                    >
+                        <Trash2 size={16} />
+                        Delete
+                    </button>
+                    <button
+                        onClick={async () => {
+                            const token = localStorage.getItem('token');
+                            const res = await fetch('http://localhost:3001/crm/deals', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                body: JSON.stringify({
+                                    title: `${lead.firstName} ${lead.lastName}`,
+                                    organization: lead.organization,
+                                    status: 'Qualification',
+                                    probability: 20,
+                                    dealValue: lead.annualRevenue || 0,
+                                    expectedClosureDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+                                })
+                            });
+                            if (res.ok) {
+                                const deal = await res.json();
+                                router.push(`/deals/${deal._id}`);
+                            }
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                    >
                         Convert to Deal
                     </button>
+                    <EditModal
+                        isOpen={isEditModalOpen}
+                        onClose={() => setIsEditModalOpen(false)}
+                        type="Lead"
+                        initialData={lead}
+                        onSuccess={() => {
+                            fetch(`http://localhost:3001/crm/leads/${id}`).then(res => res.json()).then(data => setLead(data));
+                        }}
+                    />
                 </div>
             </div>
 
