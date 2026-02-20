@@ -10,13 +10,30 @@ export const bootstrap = async (expressInstance: Express) => {
     AppModule,
     new ExpressAdapter(expressInstance),
   );
-  app.enableCors();
+
+  // Explicit CORS configuration for Vercel Hobby
+  app.enableCors({
+    origin: true, // Reflects the request origin
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
+  });
+
   await app.init();
   return app;
 };
 
 // Vercel Serverless Handler
 export default async (req: any, res: any) => {
+  // Handle basic CORS preflight manually if needed at handler level
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization, X-Requested-With');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    return res.status(204).end();
+  }
+
   if (!cachedServer) {
     cachedServer = express();
     await bootstrap(cachedServer);
